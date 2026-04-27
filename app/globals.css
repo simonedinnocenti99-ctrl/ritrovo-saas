@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 37 48% 97%;
+  --foreground: 205 31% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 205 31% 14%;
+  --primary: 185 55% 27%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 252 64% 96%;
+  --secondary-foreground: 250 38% 32%;
+  --muted: 37 24% 92%;
+  --muted-foreground: 205 14% 42%;
+  --accent: 263 73% 58%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 2 70% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 35 22% 86%;
+  --input: 35 22% 86%;
+  --ring: 185 55% 27%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(93, 74, 194, 0.12), transparent 30rem),
+    radial-gradient(circle at 80% 0%, rgba(31, 128, 135, 0.14), transparent 26rem),
+    hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+.container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}

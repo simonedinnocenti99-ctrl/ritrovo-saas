@@ -1,0 +1,20 @@
+-- Optional local seed. Replace the UUIDs with real auth user IDs from your local Supabase Auth.
+-- Run only after creating at least one user.
+
+-- Example:
+-- insert into public.organizations (id, name, slug, created_by)
+-- values ('00000000-0000-0000-0000-000000000001', 'Ritrovo Demo', 'ritrovo-demo', '<USER_UUID>');
+--
+-- insert into public.organization_members (organization_id, user_id, role)
+-- values ('00000000-0000-0000-0000-000000000001', '<USER_UUID>', 'owner');
+--
+-- insert into public.groups (id, organization_id, name, description, created_by)
+-- values ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Amici storici', 'Il gruppo principale per cene, weekend e idee dell ultimo minuto.', '<USER_UUID>');
+--
+-- insert into public.group_members (group_id, user_id, role)
+-- values ('00000000-0000-0000-0000-000000000002', '<USER_UUID>', 'owner');
+--
+-- insert into public.activities (organization_id, group_id, created_by, title, description, category, status, starts_at, ends_at, location_name, budget_min, budget_max, notes)
+-- values
+-- ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '<USER_UUID>', 'Cena giapponese', 'Serata tranquilla per recuperare tutti dopo settimane piene.', 'Cena', 'completed', now() - interval '20 days', now() - interval '20 days' + interval '3 hours', 'Izakaya di quartiere', 25, 45, 'Buono per gruppi da 6 a 10.'),
+-- ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '<USER_UUID>', 'Weekend al lago', 'Bozza per un fine settimana fuori porta.', 'Viaggio', 'planning', now() + interval '18 days', now() + interval '20 days', 'Lago di Como', 120, 220, 'Verificare auto e disponibilita camere.');
