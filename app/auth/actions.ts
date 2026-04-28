@@ -89,30 +89,9 @@ export async function resetPasswordAction(_: unknown, formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email.data, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback?next=/aggiorna-password`
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/aggiorna-password`
   });
 
   if (error) return { error: "Invio non riuscito. Controlla la configurazione Supabase Auth." };
   return { success: "Ti abbiamo inviato il link per recuperare la password." };
-}
-
-export async function updatePasswordAction(_: unknown, formData: FormData) {
-  const schema = z
-    .object({
-      password: z.string().min(6, "La nuova password deve avere almeno 6 caratteri."),
-      confirmPassword: z.string().min(6, "Conferma la nuova password.")
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: "Le password non coincidono.",
-      path: ["confirmPassword"]
-    });
-
-  const parsed = schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Dati non validi." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
-
-  if (error) return { error: "Non sono riuscito ad aggiornare la password. Apri di nuovo il link ricevuto via email." };
-  redirect("/dashboard");
 }
