@@ -36,7 +36,7 @@ function getSignupErrorMessage(message: string) {
     return "Supabase non riesce a salvare il profilo utente. Verifica che la migrazione SQL sia stata applicata.";
   }
 
-  return "Registrazione non riuscita. Controlla configurazione Supabase e riprova.";
+  return `Registrazione non riuscita: ${message}`;
 }
 
 export async function loginAction(_: unknown, formData: FormData) {
