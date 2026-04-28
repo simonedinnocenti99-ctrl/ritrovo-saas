@@ -13,6 +13,32 @@ const signupSchema = loginSchema.extend({
   fullName: z.string().min(2, "Inserisci il tuo nome.")
 });
 
+function getSignupErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("user already registered") || normalized.includes("already registered")) {
+    return "Esiste gia un account con questa email. Prova ad accedere.";
+  }
+
+  if (normalized.includes("email signups are disabled") || normalized.includes("signup disabled")) {
+    return "La registrazione via email non e abilitata in Supabase Auth.";
+  }
+
+  if (normalized.includes("password")) {
+    return "La password non rispetta i requisiti configurati in Supabase.";
+  }
+
+  if (normalized.includes("redirect") || normalized.includes("not allowed")) {
+    return "Il redirect di registrazione non e autorizzato in Supabase Auth.";
+  }
+
+  if (normalized.includes("database") || normalized.includes("saving new user")) {
+    return "Supabase non riesce a salvare il profilo utente. Verifica che la migrazione SQL sia stata applicata.";
+  }
+
+  return "Registrazione non riuscita. Controlla configurazione Supabase e riprova.";
+}
+
 export async function loginAction(_: unknown, formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Dati non validi." };
@@ -38,7 +64,16 @@ export async function signupAction(_: unknown, formData: FormData) {
     }
   });
 
-  if (error) return { error: "Non sono riuscito a creare l account. Prova con un altra email." };
+  if (error) {
+    console.error("Supabase signup error", {
+      status: error.status,
+      code: error.code,
+      message: error.message
+    });
+
+    return { error: getSignupErrorMessage(error.message) };
+  }
+
   redirect("/dashboard");
 }
 
