@@ -79,6 +79,13 @@ export async function getActivityDetail(activityId: string) {
   };
 }
 
+type GroupMemberWithProfile = {
+  id: string;
+  role: string;
+  user_id: string;
+  profiles: Profile | null;
+};
+
 export async function getGroupSettings(groupId: string) {
   const supabase = await createClient();
   const [{ data: group }, { data: members }] = await Promise.all([
@@ -86,8 +93,19 @@ export async function getGroupSettings(groupId: string) {
     supabase.from("group_members").select("id, role, user_id, profiles(*)").eq("group_id", groupId)
   ]);
 
+  const normalizedMembers: GroupMemberWithProfile[] = (members ?? []).map((member) => {
+    const profile = Array.isArray(member.profiles) ? member.profiles[0] ?? null : member.profiles ?? null;
+
+    return {
+      id: member.id,
+      role: member.role,
+      user_id: member.user_id,
+      profiles: profile as Profile | null
+    };
+  });
+
   return {
     group: group as Group,
-    members: (members ?? []) as Array<{ id: string; role: string; user_id: string; profiles: Profile | null }>
+    members: normalizedMembers
   };
 }
