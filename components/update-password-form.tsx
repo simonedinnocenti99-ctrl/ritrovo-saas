@@ -23,18 +23,9 @@ export function UpdatePasswordForm() {
 
       const code = searchParams.get("code");
       if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-        if (!active) return;
-
-        if (exchangeError) {
-          setError(`Link di recupero non valido o scaduto: ${exchangeError.message}`);
-          setSessionReady(false);
-          return;
-        }
-
-        window.history.replaceState(null, "", "/aggiorna-password");
-        setSessionReady(true);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("next", "/aggiorna-password");
+        window.location.replace(`/auth/callback?${params.toString()}`);
         return;
       }
 

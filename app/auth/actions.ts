@@ -89,7 +89,7 @@ export async function resetPasswordAction(_: unknown, formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email.data, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/aggiorna-password`
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback?next=/aggiorna-password`
   });
 
   if (error) return { error: "Invio non riuscito. Controlla la configurazione Supabase Auth." };
