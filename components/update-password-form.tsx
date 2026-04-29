@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -9,8 +9,72 @@ import { createClient } from "@/lib/supabase/client";
 
 export function UpdatePasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const supabase = useMemo(() => createClient(), []);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function prepareRecoverySession() {
+      setError("");
+
+      const code = searchParams.get("code");
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (!active) return;
+
+        if (exchangeError) {
+          setError(`Link di recupero non valido o scaduto: ${exchangeError.message}`);
+          setSessionReady(false);
+          return;
+        }
+
+        window.history.replaceState(null, "", "/aggiorna-password");
+        setSessionReady(true);
+        return;
+      }
+
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+
+        if (!active) return;
+
+        if (sessionError) {
+          setError(`Sessione di recupero non valida: ${sessionError.message}`);
+          setSessionReady(false);
+          return;
+        }
+
+        window.history.replaceState(null, "", "/aggiorna-password");
+        setSessionReady(true);
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      setSessionReady(Boolean(data.session));
+      if (!data.session) {
+        setError("Apri questa pagina dal link di recupero ricevuto via email.");
+      }
+    }
+
+    prepareRecoverySession();
+
+    return () => {
+      active = false;
+    };
+  }, [searchParams, supabase]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,13 +94,17 @@ export function UpdatePasswordForm() {
       return;
     }
 
+    if (!sessionReady) {
+      setError("Sessione di recupero non pronta. Apri di nuovo il link ricevuto via email.");
+      return;
+    }
+
     setPending(true);
-    const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setPending(false);
 
     if (updateError) {
-      setError("Non sono riuscito ad aggiornare la password. Apri di nuovo il link ricevuto via email.");
+      setError(`Non sono riuscito ad aggiornare la password: ${updateError.message}`);
       return;
     }
 
@@ -53,15 +121,15 @@ export function UpdatePasswordForm() {
       <div className="mt-6 space-y-4">
         <div>
           <Label htmlFor="password">Nuova password</Label>
-          <Input id="password" name="password" type="password" autoComplete="new-password" required />
+          <Input id="password" name="password" type="password" autoComplete="new-password" required disabled={!sessionReady || pending} />
         </div>
         <div>
           <Label htmlFor="confirmPassword">Conferma password</Label>
-          <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required />
+          <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required disabled={!sessionReady || pending} />
         </div>
       </div>
       {error ? <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p> : null}
-      <Button className="mt-6 w-full" disabled={pending}>
+      <Button className="mt-6 w-full" disabled={!sessionReady || pending}>
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Aggiorna password
       </Button>
