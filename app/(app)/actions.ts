@@ -205,10 +205,23 @@ export async function inviteMemberAction(formData: FormData) {
 export async function createGroupAction(_: unknown, formData: FormData) {
   const schema = z.object({
     name: z.string().min(2, "Inserisci un nome gruppo."),
-    description: z.string().optional()
+    description: z.string().optional(),
+    invite_emails: z.string().optional(),
+    invite_role: z.enum(["admin", "member"]).default("member")
   });
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Dati non validi." };
+
+  const inviteEmails = Array.from(
+    new Set(
+      (parsed.data.invite_emails ?? "")
+        .split(/[\s,;]+/)
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
+  const invalidEmail = inviteEmails.find((email) => !z.string().email().safeParse(email).success);
+  if (invalidEmail) return { error: `Email invito non valida: ${invalidEmail}` };
 
   const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
@@ -226,7 +239,21 @@ export async function createGroupAction(_: unknown, formData: FormData) {
   if (error) return { error: "Non riesco a creare il gruppo." };
 
   await supabase.from("group_members").insert({ group_id: group.id, user_id: workspace.user.id, role: "owner" });
+  if (inviteEmails.length) {
+    const { error: inviteError } = await supabase.from("invitations").insert(
+      inviteEmails.map((email) => ({
+        organization_id: workspace.organization.id,
+        group_id: group.id,
+        email,
+        role: parsed.data.invite_role,
+        invited_by: workspace.user.id
+      }))
+    );
+    if (inviteError) return { error: "Gruppo creato, ma non riesco a salvare gli inviti." };
+  }
+
   revalidatePath("/gruppi");
+  revalidatePath(`/gruppi/${group.id}`);
   redirect(`/gruppi/${group.id}`);
 }
 

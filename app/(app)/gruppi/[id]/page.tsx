@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActivityCard } from "@/components/activity-card";
+import { inviteMemberAction } from "@/app/(app)/actions";
+import { GroupSettingsForm, InviteMemberForm, MembersList } from "@/components/group-settings-form";
 import { EmptyState } from "@/components/states";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { getGroupDashboardData, listGroupActivities } from "@/lib/data";
+import { Card } from "@/components/ui/card";
+import { getGroupDashboardData, getGroupSettings, listGroupActivities } from "@/lib/data";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
 export default async function GroupPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +16,8 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   const group = workspace.groups.find((item) => item.id === id);
   if (!group) notFound();
 
-  const [data, activities] = await Promise.all([getGroupDashboardData(group.id), listGroupActivities(group.id)]);
+  const canManageGroup = ["owner", "admin"].includes(group.role);
+  const [data, activities, settings] = await Promise.all([getGroupDashboardData(group.id), listGroupActivities(group.id), getGroupSettings(group.id)]);
 
   return (
     <>
@@ -39,11 +42,20 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           <EmptyState title="Nessun ritrovo nel gruppo" message="Crea il primo ritrovo per questo pubblico ricorrente." actionHref={`/nuova-attivita?group_id=${group.id}`} actionLabel="Crea ritrovo" />
         )}
       </section>
-      <Card className="mt-8">
-        <CardHeader><CardTitle>Gestione gruppo</CardTitle></CardHeader>
-        <p className="text-sm text-muted-foreground">Modifica nome, descrizione e inviti dalla pagina impostazioni.</p>
-        <Button asChild href="/impostazioni/gruppo" variant="secondary" className="mt-5">Apri impostazioni</Button>
-      </Card>
+      <section className="mt-8">
+        <h2 className="mb-4 text-xl font-semibold">Gestione gruppo</h2>
+        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          {canManageGroup ? (
+            <>
+              <GroupSettingsForm group={settings.group} />
+              <InviteMemberForm action={inviteMemberAction} groupId={settings.group.id} />
+            </>
+          ) : null}
+          <div className="xl:col-span-2">
+            <MembersList members={settings.members} />
+          </div>
+        </div>
+      </section>
     </>
   );
 }

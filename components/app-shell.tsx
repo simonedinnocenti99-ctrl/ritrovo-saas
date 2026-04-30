@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Home, LogOut, PlusCircle, Settings, Sparkles, UsersRound } from "lucide-react";
+import { CalendarDays, Home, LogOut, PlusCircle, Sparkles, UsersRound } from "lucide-react";
 import { logoutAction } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { initials } from "@/lib/utils";
@@ -10,8 +10,7 @@ const nav = [
   { href: "/attivita", label: "Ritrovi", icon: CalendarDays },
   { href: "/gruppi", label: "Gruppi", icon: UsersRound },
   { href: "/nuova-attivita", label: "Crea", icon: PlusCircle },
-  { href: "/assistente", label: "AI", icon: Sparkles },
-  { href: "/impostazioni/gruppo", label: "Gruppo", icon: Settings }
+  { href: "/assistente", label: "AI", icon: Sparkles }
 ];
 
 export function AppShell({ children, workspace }: { children: React.ReactNode; workspace: Workspace }) {
