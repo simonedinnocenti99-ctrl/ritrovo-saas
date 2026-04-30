@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActivityCard } from "@/components/activity-card";
 import { inviteMemberAction } from "@/app/(app)/actions";
+import { CopyInviteLinks } from "@/components/copy-invite-links";
 import { GroupSettingsForm, InviteMemberForm, MembersList } from "@/components/group-settings-form";
 import { EmptyState } from "@/components/states";
 import { PageHeader } from "@/components/page-header";
@@ -18,6 +19,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
   const canManageGroup = ["owner", "admin"].includes(group.role);
   const [data, activities, settings] = await Promise.all([getGroupDashboardData(group.id), listGroupActivities(group.id), getGroupSettings(group.id)]);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   return (
     <>
@@ -49,6 +51,12 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
             <>
               <GroupSettingsForm group={settings.group} />
               <InviteMemberForm action={inviteMemberAction} groupId={settings.group.id} />
+              <Card className="xl:col-span-2">
+                <h2 className="font-semibold">Link invito da condividere</h2>
+                <div className="mt-4">
+                  <CopyInviteLinks invitations={settings.invitations} baseUrl={baseUrl} />
+                </div>
+              </Card>
             </>
           ) : null}
           <div className="xl:col-span-2">

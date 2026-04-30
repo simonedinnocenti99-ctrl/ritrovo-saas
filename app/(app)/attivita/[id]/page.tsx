@@ -1,6 +1,7 @@
 import { createPollAction, updateRsvpAction } from "@/app/(app)/actions";
 import { ActivityDetailHeader } from "@/components/activity-detail-header";
 import { AvailabilityPlanner } from "@/components/availability-planner";
+import { CopyInviteLinks } from "@/components/copy-invite-links";
 import { MemberAvatarGroup } from "@/components/member-avatar-group";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { PhotoUploader } from "@/components/photo-uploader";
@@ -14,6 +15,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const detail = await getActivityDetail(id);
   const names = detail.participants.map((participant) => participant.display_name || participant.email || "Invitato");
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   return (
     <div className="space-y-6">
@@ -78,6 +80,10 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
           <Card>
             <CardHeader><CardTitle>Note</CardTitle></CardHeader>
             <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{detail.activity.notes || "Nessuna nota interna."}</p>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Link invito</CardTitle></CardHeader>
+            <CopyInviteLinks invitations={detail.invitations} baseUrl={baseUrl} />
           </Card>
         </aside>
       </div>

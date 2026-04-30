@@ -5,6 +5,7 @@ export type ActivityStatus = "draft" | "planning" | "scheduled" | "completed" | 
 export type ParticipantStatus = "invited" | "confirmed" | "declined" | "maybe";
 export type AvailabilityStatus = "available" | "unavailable" | "maybe";
 export type PollStatus = "open" | "closed";
+export type InvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 
 export type Profile = {
   id: string;
@@ -67,6 +68,20 @@ export type ActivityParticipant = {
   invited_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Invitation = {
+  id: string;
+  organization_id: string;
+  group_id: string | null;
+  activity_id: string | null;
+  email: string;
+  role: MemberRole;
+  token: string;
+  status: InvitationStatus;
+  invited_by: string | null;
+  expires_at: string;
+  created_at: string;
 };
 
 export type ActivityPhoto = {

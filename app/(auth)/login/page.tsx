@@ -8,7 +8,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <AuthForm mode="login" next={params.next} />
       <PasswordResetForm />
       <p className="mt-5 text-center text-sm text-muted-foreground">
-        Non hai un account? <Link className="font-medium text-primary" href="/registrati">Registrati</Link>
+        Non hai un account? <Link className="font-medium text-primary" href={`/registrati?next=${encodeURIComponent(params.next ?? "/dashboard")}`}>Registrati</Link>
       </p>
     </div>
   );

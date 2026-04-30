@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { sendActivityInviteEmail, sendGroupInviteEmail, summarizeEmailResults } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
@@ -66,15 +67,46 @@ export async function createActivityAction(_: unknown, formData: FormData) {
     .filter(Boolean);
 
   if (participants.length) {
-    await supabase.from("activity_participants").insert(
+    const { error: participantsError } = await supabase.from("activity_participants").insert(
       participants.map((value) => ({
         activity_id: activity.id,
         display_name: value.includes("@") ? null : value,
-        email: value.includes("@") ? value : null,
+        email: value.includes("@") ? value.toLowerCase() : null,
         invited_by: workspace.user.id,
         status: "invited"
       }))
     );
+    if (participantsError) return { error: "Ritrovo creato, ma non riesco a salvare i partecipanti." };
+
+    const participantEmails = Array.from(new Set(participants.filter((value) => value.includes("@")).map((value) => value.toLowerCase())));
+    if (participantEmails.length) {
+      const { error: inviteError } = await supabase.from("invitations").insert(
+        participantEmails.map((email) => ({
+          organization_id: workspace.organization.id,
+          activity_id: activity.id,
+          email,
+          role: "guest",
+          invited_by: workspace.user.id
+        }))
+      );
+      if (inviteError) return { error: "Ritrovo creato, ma non riesco a generare i link invito." };
+    }
+
+    const emailMessage = await summarizeEmailResults(
+      await Promise.all(
+        participantEmails.map((email) =>
+          sendActivityInviteEmail({
+            to: email,
+            activityTitle: activity.title,
+            inviterName: workspace.profile?.full_name || workspace.user.email || "Un organizzatore",
+            startsAt: activity.starts_at,
+            locationName: activity.location_name,
+            activityId: activity.id
+          })
+        )
+      )
+    );
+    if (emailMessage) return { error: `Ritrovo creato. ${emailMessage}` };
   }
 
   revalidatePath("/attivita");
@@ -191,15 +223,31 @@ export async function inviteMemberAction(formData: FormData) {
     return;
   }
 
-  await supabase.from("invitations").insert({
-    organization_id: workspace.organization.id,
-    group_id: groupId,
-    email,
-    role,
-    invited_by: workspace.user.id
-  });
+  const { data: invitation, error } = await supabase
+    .from("invitations")
+    .insert({
+      organization_id: workspace.organization.id,
+      group_id: groupId,
+      email,
+      role,
+      invited_by: workspace.user.id
+    })
+    .select("token")
+    .single();
+  if (error) return;
+
+  const groupName = workspace.groups.find((group) => group.id === groupId)?.name ?? "Ritrovo";
+  const emailMessage = await summarizeEmailResults([
+    await sendGroupInviteEmail({
+      to: email,
+      groupName,
+      inviterName: workspace.profile?.full_name || workspace.user.email || "Un organizzatore",
+      token: invitation.token
+    })
+  ]);
   revalidatePath("/impostazioni/gruppo");
   revalidatePath(`/gruppi/${groupId}`);
+  if (emailMessage) console.warn(emailMessage);
 }
 
 export async function createGroupAction(_: unknown, formData: FormData) {
@@ -240,16 +288,33 @@ export async function createGroupAction(_: unknown, formData: FormData) {
 
   await supabase.from("group_members").insert({ group_id: group.id, user_id: workspace.user.id, role: "owner" });
   if (inviteEmails.length) {
-    const { error: inviteError } = await supabase.from("invitations").insert(
-      inviteEmails.map((email) => ({
-        organization_id: workspace.organization.id,
-        group_id: group.id,
-        email,
-        role: parsed.data.invite_role,
-        invited_by: workspace.user.id
-      }))
-    );
+    const { data: invitations, error: inviteError } = await supabase
+      .from("invitations")
+      .insert(
+        inviteEmails.map((email) => ({
+          organization_id: workspace.organization.id,
+          group_id: group.id,
+          email,
+          role: parsed.data.invite_role,
+          invited_by: workspace.user.id
+        }))
+      )
+      .select("email, token");
     if (inviteError) return { error: "Gruppo creato, ma non riesco a salvare gli inviti." };
+
+    const emailMessage = await summarizeEmailResults(
+      await Promise.all(
+        (invitations ?? []).map((invitation) =>
+          sendGroupInviteEmail({
+            to: invitation.email,
+            groupName: group.name,
+            inviterName: workspace.profile?.full_name || workspace.user.email || "Un organizzatore",
+            token: invitation.token
+          })
+        )
+      )
+    );
+    if (emailMessage) return { error: `Gruppo creato. ${emailMessage}` };
   }
 
   revalidatePath("/gruppi");

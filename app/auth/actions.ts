@@ -74,7 +74,7 @@ export async function signupAction(_: unknown, formData: FormData) {
     return { error: getSignupErrorMessage(error.message) };
   }
 
-  redirect("/dashboard");
+  redirect(String(formData.get("next") || "/dashboard"));
 }
 
 export async function logoutAction() {

@@ -6,6 +6,7 @@ import type {
   AvailabilityOption,
   AvailabilityResponse,
   Group,
+  Invitation,
   Poll,
   PollOption,
   PollVote,
@@ -104,7 +105,7 @@ export async function getActivityDetail(activityId: string) {
   const { data: activity, error } = await supabase.from("activities").select("*").eq("id", activityId).single();
   if (error) throw error;
 
-  const [{ data: participants }, { data: photos }, { data: options }, { data: responses }, { data: polls }, { data: pollOptions }, { data: votes }] =
+  const [{ data: participants }, { data: photos }, { data: options }, { data: responses }, { data: polls }, { data: pollOptions }, { data: votes }, { data: invitations }] =
     await Promise.all([
       supabase.from("activity_participants").select("*").eq("activity_id", activityId),
       supabase.from("activity_photos").select("*").eq("activity_id", activityId).order("created_at", { ascending: false }),
@@ -112,7 +113,8 @@ export async function getActivityDetail(activityId: string) {
       supabase.from("availability_responses").select("*"),
       supabase.from("polls").select("*").eq("activity_id", activityId).order("created_at", { ascending: false }),
       supabase.from("poll_options").select("*"),
-      supabase.from("poll_votes").select("*")
+      supabase.from("poll_votes").select("*"),
+      supabase.from("invitations").select("*").eq("activity_id", activityId).eq("status", "pending").order("created_at", { ascending: false })
     ]);
 
   const photoRows = (photos ?? []) as ActivityPhoto[];
@@ -131,7 +133,8 @@ export async function getActivityDetail(activityId: string) {
     availabilityResponses: (responses ?? []) as AvailabilityResponse[],
     polls: (polls ?? []) as Poll[],
     pollOptions: (pollOptions ?? []) as PollOption[],
-    pollVotes: (votes ?? []) as PollVote[]
+    pollVotes: (votes ?? []) as PollVote[],
+    invitations: (invitations ?? []) as Invitation[]
   };
 }
 
@@ -144,9 +147,10 @@ type GroupMemberWithProfile = {
 
 export async function getGroupSettings(groupId: string) {
   const supabase = await createClient();
-  const [{ data: group }, { data: members }] = await Promise.all([
+  const [{ data: group }, { data: members }, { data: invitations }] = await Promise.all([
     supabase.from("groups").select("*").eq("id", groupId).single(),
-    supabase.from("group_members").select("id, role, user_id, profiles(*)").eq("group_id", groupId)
+    supabase.from("group_members").select("id, role, user_id, profiles(*)").eq("group_id", groupId),
+    supabase.from("invitations").select("*").eq("group_id", groupId).eq("status", "pending").order("created_at", { ascending: false })
   ]);
 
   const normalizedMembers: GroupMemberWithProfile[] = (members ?? []).map((member) => {
@@ -162,6 +166,7 @@ export async function getGroupSettings(groupId: string) {
 
   return {
     group: group as Group,
-    members: normalizedMembers
+    members: normalizedMembers,
+    invitations: (invitations ?? []) as Invitation[]
   };
 }

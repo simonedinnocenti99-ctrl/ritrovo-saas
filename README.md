@@ -25,6 +25,7 @@ GatherLoop e una piattaforma privata per organizzare, pianificare e ricordare at
 - Upload foto su Supabase Storage privato, caption ed eliminazione
 - Assistente AI server-side con output JSON validato e fallback
 - Impostazioni gruppo, inviti e lista membri
+- Link invito copiabili per condividere accessi via WhatsApp, email personale o altri canali
 - Schema multi-tenant con ruoli `owner`, `admin`, `member`, `guest`
 
 ## Setup locale
@@ -50,9 +51,23 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 LLM_API_KEY=your-llm-api-key
 LLM_MODEL=gpt-4o-mini
+RESEND_API_KEY=your-resend-api-key
+EMAIL_FROM=Ritrovo <inviti@your-domain.com>
 ```
 
 `LLM_API_KEY` e opzionale in sviluppo: senza chiave l assistente restituisce un fallback strutturato.
+`RESEND_API_KEY` ed `EMAIL_FROM` servono per inviare davvero le email di invito a gruppi e ritrovi. Senza queste variabili gli inviti vengono salvati nel database, ma il server restituisce un avviso per segnalare che la consegna email non e configurata.
+
+### Email inviti
+
+L'invio usa Resend tramite API HTTP server-side, senza dipendenze aggiuntive. Per attivarlo:
+
+- crea un account Resend
+- verifica un dominio mittente e configura i record DNS richiesti
+- crea una API key
+- imposta `RESEND_API_KEY` e `EMAIL_FROM` su `.env.local` e su Vercel
+
+In sviluppo puoi usare temporaneamente il mittente di test di Resend, ma in produzione conviene usare un dominio verificato per migliorare recapito e reputazione.
 
 4. Applica la migrazione Supabase:
 
@@ -60,7 +75,7 @@ LLM_MODEL=gpt-4o-mini
 supabase db push
 ```
 
-Oppure incolla `supabase/migrations/0001_initial_schema.sql` nel SQL editor del progetto Supabase.
+Oppure incolla i file in `supabase/migrations` nel SQL editor del progetto Supabase, in ordine numerico.
 
 5. Avvia Next.js:
 
