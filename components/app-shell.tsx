@@ -7,7 +7,8 @@ import type { Workspace } from "@/lib/workspace";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/attivita", label: "Attivita", icon: CalendarDays },
+  { href: "/attivita", label: "Ritrovi", icon: CalendarDays },
+  { href: "/gruppi", label: "Gruppi", icon: UsersRound },
   { href: "/nuova-attivita", label: "Crea", icon: PlusCircle },
   { href: "/assistente", label: "AI", icon: Sparkles },
   { href: "/impostazioni/gruppo", label: "Gruppo", icon: Settings }
@@ -23,7 +24,7 @@ export function AppShell({ children, workspace }: { children: React.ReactNode; w
           </div>
           <div>
             <p className="font-semibold">Ritrovo</p>
-            <p className="text-xs text-muted-foreground">{workspace.group.name}</p>
+            <p className="text-xs text-muted-foreground">{workspace.organization.name}</p>
           </div>
         </Link>
         <nav className="mt-8 space-y-1">
@@ -44,7 +45,7 @@ export function AppShell({ children, workspace }: { children: React.ReactNode; w
             </div>
             <div className="flex items-center gap-2">
               <Button asChild href="/nuova-attivita" size="sm" className="hidden sm:inline-flex">
-                Nuova attivita
+                Nuovo ritrovo
               </Button>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
                 {initials(workspace.profile?.full_name || workspace.user.email)}

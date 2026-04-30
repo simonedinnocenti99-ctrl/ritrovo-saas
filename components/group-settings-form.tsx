@@ -10,6 +10,7 @@ export function GroupSettingsForm({ group }: { group: Group }) {
   const [state, action] = useActionState(updateGroupAction, null);
   return (
     <form action={action} className="rounded-2xl border bg-white p-5">
+      <input type="hidden" name="groupId" value={group.id} />
       <div>
         <Label htmlFor="name">Nome gruppo</Label>
         <Input id="name" name="name" defaultValue={group.name} required />
@@ -25,9 +26,10 @@ export function GroupSettingsForm({ group }: { group: Group }) {
   );
 }
 
-export function InviteMemberForm({ action }: { action: (formData: FormData) => void | Promise<void> }) {
+export function InviteMemberForm({ action, groupId }: { action: (formData: FormData) => void | Promise<void>; groupId: string }) {
   return (
     <form action={action} className="rounded-2xl border bg-white p-5">
+      <input type="hidden" name="groupId" value={groupId} />
       <h2 className="font-semibold">Invita membro</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_10rem_auto]">
         <Input name="email" type="email" placeholder="persona@email.it" required />

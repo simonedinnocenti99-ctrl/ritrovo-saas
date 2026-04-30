@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-const privatePrefixes = ["/dashboard", "/attivita", "/nuova-attivita", "/assistente", "/impostazioni"];
+const privatePrefixes = ["/dashboard", "/attivita", "/gruppi", "/nuova-attivita", "/assistente", "/impostazioni"];
 const authPrefixes = ["/login", "/registrati"];
 
 export async function middleware(request: NextRequest) {

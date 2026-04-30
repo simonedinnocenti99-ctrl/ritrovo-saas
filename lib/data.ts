@@ -12,7 +12,19 @@ import type {
   Profile
 } from "@/lib/database.types";
 
-export async function listActivities(groupId: string, filters?: { q?: string; status?: string; category?: string }) {
+type ActivityFilters = { q?: string; status?: string; category?: string };
+
+function filterActivities(activities: Activity[], filters?: ActivityFilters) {
+  return activities.filter((activity) => {
+    if (filters?.q && !activity.title.toLowerCase().includes(filters.q.toLowerCase())) return false;
+    if (filters?.category && filters.category !== "all" && activity.category !== filters.category) return false;
+    if (filters?.status === "future" && !["draft", "planning", "scheduled"].includes(activity.status)) return false;
+    if (filters?.status === "past" && activity.status !== "completed") return false;
+    return true;
+  });
+}
+
+export async function listGroupActivities(groupId: string, filters?: ActivityFilters) {
   const supabase = await createClient();
   let query = supabase.from("activities").select("*").eq("group_id", groupId).order("starts_at", { ascending: false, nullsFirst: false });
 
@@ -26,8 +38,29 @@ export async function listActivities(groupId: string, filters?: { q?: string; st
   return (data ?? []) as Activity[];
 }
 
-export async function getDashboardData(groupId: string) {
-  const activities = await listActivities(groupId);
+export async function listMyActivities(userId: string, organizationId: string, filters?: ActivityFilters) {
+  const supabase = await createClient();
+
+  const [{ data: activities, error }, { data: participantRows }] = await Promise.all([
+    supabase.from("activities").select("*").eq("organization_id", organizationId).order("starts_at", { ascending: false, nullsFirst: false }),
+    supabase.from("activity_participants").select("activity_id").eq("user_id", userId)
+  ]);
+
+  if (error) throw error;
+
+  const participantActivityIds = new Set((participantRows ?? []).map((row) => row.activity_id));
+  const visibleActivities = ((activities ?? []) as Activity[]).filter(
+    (activity) => activity.created_by === userId || activity.group_id || participantActivityIds.has(activity.id)
+  );
+
+  return filterActivities(visibleActivities, filters);
+}
+
+export async function listActivities(groupId: string, filters?: ActivityFilters) {
+  return listGroupActivities(groupId, filters);
+}
+
+async function getActivitySummary(activities: Activity[]) {
   const upcoming = activities.filter((activity) => ["draft", "planning", "scheduled"].includes(activity.status)).slice(0, 4);
   const past = activities.filter((activity) => activity.status === "completed").slice(0, 4);
   const activityIds = activities.map((activity) => activity.id);
@@ -41,6 +74,29 @@ export async function getDashboardData(groupId: string) {
     : { data: [] };
 
   return { upcoming, past, openPolls: (polls ?? []) as Poll[], availability: (availability ?? []) as AvailabilityOption[] };
+}
+
+export async function getDashboardData(userId: string, organizationId: string) {
+  const activities = await listMyActivities(userId, organizationId);
+  return getActivitySummary(activities);
+}
+
+export async function getGroupDashboardData(groupId: string) {
+  const activities = await listGroupActivities(groupId);
+  return getActivitySummary(activities);
+}
+
+export async function getUserGroups(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("group_members").select("role, groups(*)").eq("user_id", userId);
+  if (error) throw error;
+
+  return (data ?? [])
+    .map((membership) => {
+      const group = Array.isArray(membership.groups) ? membership.groups[0] : membership.groups;
+      return group ? ({ ...(group as Group), role: membership.role } as Group & { role: string }) : null;
+    })
+    .filter((group): group is Group & { role: string } => Boolean(group));
 }
 
 export async function getActivityDetail(activityId: string) {

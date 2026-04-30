@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
 const activitySchema = z.object({
+  group_id: z.string().uuid().optional().or(z.literal("personal")),
   title: z.string().min(3, "Il titolo deve avere almeno 3 caratteri."),
   description: z.string().optional(),
   category: z.string().min(2),
@@ -29,12 +30,17 @@ export async function createActivityAction(_: unknown, formData: FormData) {
   const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
   const data = parsed.data;
+  const groupId = data.group_id && data.group_id !== "personal" ? data.group_id : null;
+
+  if (groupId && !workspace.groups.some((group) => group.id === groupId)) {
+    return { error: "Non puoi creare un ritrovo in questo gruppo." };
+  }
 
   const { data: activity, error } = await supabase
     .from("activities")
     .insert({
       organization_id: workspace.organization.id,
-      group_id: workspace.group.id,
+      group_id: groupId,
       created_by: workspace.user.id,
       title: data.title,
       description: data.description || null,
@@ -52,7 +58,7 @@ export async function createActivityAction(_: unknown, formData: FormData) {
     .select()
     .single();
 
-  if (error) return { error: "Non riesco a creare l attivita. Controlla permessi e campi." };
+  if (error) return { error: "Non riesco a creare il ritrovo. Controlla permessi e campi." };
 
   const participants = (data.participants ?? "")
     .split(",")
@@ -72,6 +78,8 @@ export async function createActivityAction(_: unknown, formData: FormData) {
   }
 
   revalidatePath("/attivita");
+  revalidatePath("/dashboard");
+  if (groupId) revalidatePath(`/gruppi/${groupId}`);
   redirect(`/attivita/${activity.id}`);
 }
 
@@ -155,31 +163,71 @@ export async function respondAvailabilityAction(formData: FormData) {
 }
 
 export async function updateGroupAction(_: unknown, formData: FormData) {
+  const groupId = z.string().uuid().parse(formData.get("groupId"));
   const name = z.string().min(2).parse(formData.get("name"));
   const description = z.string().optional().parse(formData.get("description") ?? "");
   const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
 
-  const { error } = await supabase.from("groups").update({ name, description }).eq("id", workspace.group.id);
+  if (!workspace.groups.some((group) => group.id === groupId && ["owner", "admin"].includes(group.role))) {
+    return { error: "Non puoi modificare questo gruppo." };
+  }
+
+  const { error } = await supabase.from("groups").update({ name, description }).eq("id", groupId);
   if (error) return { error: "Non riesco ad aggiornare il gruppo." };
   revalidatePath("/impostazioni/gruppo");
+  revalidatePath(`/gruppi/${groupId}`);
   return { success: "Gruppo aggiornato." };
 }
 
 export async function inviteMemberAction(formData: FormData) {
+  const groupId = z.string().uuid().parse(formData.get("groupId"));
   const email = z.string().email().parse(formData.get("email"));
   const role = z.enum(["admin", "member"]).parse(formData.get("role"));
   const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
 
+  if (!workspace.groups.some((group) => group.id === groupId && ["owner", "admin"].includes(group.role))) {
+    return;
+  }
+
   await supabase.from("invitations").insert({
     organization_id: workspace.organization.id,
-    group_id: workspace.group.id,
+    group_id: groupId,
     email,
     role,
     invited_by: workspace.user.id
   });
   revalidatePath("/impostazioni/gruppo");
+  revalidatePath(`/gruppi/${groupId}`);
+}
+
+export async function createGroupAction(_: unknown, formData: FormData) {
+  const schema = z.object({
+    name: z.string().min(2, "Inserisci un nome gruppo."),
+    description: z.string().optional()
+  });
+  const parsed = schema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Dati non validi." };
+
+  const workspace = await getCurrentWorkspace();
+  const supabase = await createClient();
+  const { data: group, error } = await supabase
+    .from("groups")
+    .insert({
+      organization_id: workspace.organization.id,
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      created_by: workspace.user.id
+    })
+    .select()
+    .single();
+
+  if (error) return { error: "Non riesco a creare il gruppo." };
+
+  await supabase.from("group_members").insert({ group_id: group.id, user_id: workspace.user.id, role: "owner" });
+  revalidatePath("/gruppi");
+  redirect(`/gruppi/${group.id}`);
 }
 
 export async function uploadPhotoAction(_: unknown, formData: FormData) {

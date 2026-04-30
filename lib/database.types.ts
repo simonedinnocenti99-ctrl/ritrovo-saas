@@ -38,7 +38,7 @@ export type Group = {
 export type Activity = {
   id: string;
   organization_id: string;
-  group_id: string;
+  group_id: string | null;
   created_by: string | null;
   title: string;
   description: string | null;

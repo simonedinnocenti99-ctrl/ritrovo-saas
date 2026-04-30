@@ -57,7 +57,7 @@ create table public.groups (
 
 create table public.group_members (
   id uuid primary key default gen_random_uuid(),
-  group_id uuid not null references public.groups(id) on delete cascade,
+  group_id uuid references public.groups(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   role public.member_role not null default 'member',
   created_at timestamptz not null default now(),

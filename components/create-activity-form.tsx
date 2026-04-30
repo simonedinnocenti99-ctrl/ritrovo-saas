@@ -5,14 +5,26 @@ import { Loader2 } from "lucide-react";
 import { createActivityAction } from "@/app/(app)/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import type { Group } from "@/lib/database.types";
 
 const categories = ["Cena", "Viaggio", "Weekend", "Sport", "Cultura", "Aperitivo", "Evento aziendale", "Altro"];
 
-export function CreateActivityForm({ defaults }: { defaults?: Record<string, string> }) {
+export function CreateActivityForm({ defaults, groups }: { defaults?: Record<string, string>; groups: Array<Group & { role: string }> }) {
   const [state, action, pending] = useActionState(createActivityAction, null);
 
   return (
     <form action={action} className="grid gap-5 rounded-3xl border bg-white/82 p-5 shadow-sm lg:grid-cols-2">
+      <div className="lg:col-span-2">
+        <Label htmlFor="group_id">Contesto</Label>
+        <Select id="group_id" name="group_id" defaultValue={defaults?.group_id ?? "personal"}>
+          <option value="personal">Personale</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </Select>
+      </div>
       <div className="lg:col-span-2">
         <Label htmlFor="title">Titolo</Label>
         <Input id="title" name="title" required defaultValue={defaults?.title} placeholder="Weekend al lago" />
@@ -76,7 +88,7 @@ export function CreateActivityForm({ defaults }: { defaults?: Record<string, str
       <div className="lg:col-span-2">
         <Button disabled={pending} size="lg">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Crea attivita
+          Crea ritrovo
         </Button>
       </div>
     </form>

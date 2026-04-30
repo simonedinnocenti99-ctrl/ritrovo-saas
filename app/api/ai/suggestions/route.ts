@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   const { data: history } = await supabase
     .from("activities")
     .select("title,description,category,status,starts_at,location_name,budget_min,budget_max,duration")
-    .eq("group_id", workspace.group.id)
+    .eq("organization_id", workspace.organization.id)
     .eq("status", "completed")
     .order("starts_at", { ascending: false })
     .limit(20);
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
 
   await supabase.from("ai_suggestions").insert({
     organization_id: workspace.organization.id,
-    group_id: workspace.group.id,
+    group_id: workspace.groups[0]?.id ?? null,
     requested_by: workspace.user.id,
     input,
     output

@@ -6,7 +6,7 @@ export type Workspace = {
   user: { id: string; email?: string };
   profile: Profile | null;
   organization: Organization;
-  group: Group;
+  groups: Array<Group & { role: string }>;
   role: string;
 };
 
@@ -52,30 +52,17 @@ export async function getCurrentWorkspace(): Promise<Workspace> {
     await supabase.from("organization_members").insert({ organization_id: organization.id, user_id: userId, role: "owner" });
   }
 
-  const { data: groupMembership } = await supabase
+  const { data: groupMemberships } = await supabase
     .from("group_members")
     .select("role, groups(*)")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
+    .eq("user_id", userId);
 
-  let group = groupMembership?.groups as Group | undefined;
-  if (!group) {
-    const { data: createdGroup, error: groupError } = await supabase
-      .from("groups")
-      .insert({
-        organization_id: organization.id,
-        name: "Amici storici",
-        description: "Il gruppo principale per pianificare attivita e raccogliere ricordi.",
-        created_by: userId
-      })
-      .select()
-      .single();
-    if (groupError) throw groupError;
-    group = createdGroup as Group;
-    await supabase.from("group_members").insert({ group_id: group.id, user_id: userId, role: "owner" });
-  }
+  const groups = (groupMemberships ?? [])
+    .map((membership) => {
+      const group = Array.isArray(membership.groups) ? membership.groups[0] : membership.groups;
+      return group ? ({ ...(group as Group), role: membership.role } as Group & { role: string }) : null;
+    })
+    .filter((group): group is Group & { role: string } => Boolean(group));
 
-  role = groupMembership?.role ?? role;
-  return { user: { id: userId, email: auth.user.email }, profile: profile as Profile | null, organization, group, role };
+  return { user: { id: userId, email: auth.user.email }, profile: profile as Profile | null, organization, groups, role };
 }

@@ -10,36 +10,36 @@ import { getCurrentWorkspace } from "@/lib/workspace";
 
 export default async function DashboardPage() {
   const workspace = await getCurrentWorkspace();
-  const data = await getDashboardData(workspace.group.id);
+  const data = await getDashboardData(workspace.user.id, workspace.organization.id);
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        subtitle="Una vista rapida su prossime attivita, ricordi recenti, sondaggi e disponibilita aperte."
-        action={<Button asChild href="/nuova-attivita">Crea attivita</Button>}
+        subtitle="I miei ritrovi: personali, creati da te o collegati ai gruppi di cui fai parte."
+        action={<Button asChild href="/nuova-attivita">Crea ritrovo</Button>}
       />
       <div className="grid gap-4 md:grid-cols-3">
-        <Card><p className="text-sm text-muted-foreground">Prossime</p><p className="mt-2 text-3xl font-semibold">{data.upcoming.length}</p></Card>
+        <Card><p className="text-sm text-muted-foreground">Prossimi</p><p className="mt-2 text-3xl font-semibold">{data.upcoming.length}</p></Card>
         <Card><p className="text-sm text-muted-foreground">Passate</p><p className="mt-2 text-3xl font-semibold">{data.past.length}</p></Card>
         <Card><p className="text-sm text-muted-foreground">Sondaggi aperti</p><p className="mt-2 text-3xl font-semibold">{data.openPolls.length}</p></Card>
       </div>
 
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Prossime attivita</h2>
+          <h2 className="text-xl font-semibold">Prossimi ritrovi</h2>
           <Link className="text-sm font-medium text-primary" href="/attivita?status=future">Vedi tutte</Link>
         </div>
         {data.upcoming.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{data.upcoming.map((activity) => <ActivityCard key={activity.id} activity={activity} />)}</div>
         ) : (
-          <EmptyState title="Nessuna attivita futura" message="Crea una bozza o apri un sondaggio per decidere la prossima uscita." actionHref="/nuova-attivita" actionLabel="Crea attivita" />
+          <EmptyState title="Nessun ritrovo futuro" message="Crea un ritrovo personale o organizza il prossimo appuntamento in un gruppo." actionHref="/nuova-attivita" actionLabel="Crea ritrovo" />
         )}
       </section>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.85fr]">
         <Card>
-          <CardHeader><CardTitle>Ultime attivita passate</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Ultimi ritrovi passati</CardTitle></CardHeader>
           {data.past.length ? <ActivityTimeline activities={data.past} /> : <p className="text-sm text-muted-foreground">Lo storico comparira qui dopo i primi eventi completati.</p>}
         </Card>
         <Card>
