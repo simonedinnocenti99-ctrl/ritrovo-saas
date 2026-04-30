@@ -12,7 +12,7 @@ export default async function ActivitiesPage({ searchParams }: { searchParams: P
   const selectedGroup = filters.group ? workspace.groups.find((group) => group.id === filters.group) : null;
   const activities = selectedGroup
     ? await listGroupActivities(selectedGroup.id, filters)
-    : await listMyActivities(workspace.user.id, workspace.organization.id, filters);
+    : await listMyActivities(workspace.user.id, filters);
 
   return (
     <>

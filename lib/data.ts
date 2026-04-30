@@ -39,11 +39,11 @@ export async function listGroupActivities(groupId: string, filters?: ActivityFil
   return (data ?? []) as Activity[];
 }
 
-export async function listMyActivities(userId: string, organizationId: string, filters?: ActivityFilters) {
+export async function listMyActivities(userId: string, filters?: ActivityFilters) {
   const supabase = await createClient();
 
   const [{ data: activities, error }, { data: participantRows }] = await Promise.all([
-    supabase.from("activities").select("*").eq("organization_id", organizationId).order("starts_at", { ascending: false, nullsFirst: false }),
+    supabase.from("activities").select("*").order("starts_at", { ascending: false, nullsFirst: false }),
     supabase.from("activity_participants").select("activity_id").eq("user_id", userId)
   ]);
 
@@ -77,8 +77,8 @@ async function getActivitySummary(activities: Activity[]) {
   return { upcoming, past, openPolls: (polls ?? []) as Poll[], availability: (availability ?? []) as AvailabilityOption[] };
 }
 
-export async function getDashboardData(userId: string, organizationId: string) {
-  const activities = await listMyActivities(userId, organizationId);
+export async function getDashboardData(userId: string) {
+  const activities = await listMyActivities(userId);
   return getActivitySummary(activities);
 }
 

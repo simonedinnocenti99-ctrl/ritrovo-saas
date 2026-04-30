@@ -10,7 +10,7 @@ import { getCurrentWorkspace } from "@/lib/workspace";
 
 export default async function DashboardPage() {
   const workspace = await getCurrentWorkspace();
-  const data = await getDashboardData(workspace.user.id, workspace.organization.id);
+  const data = await getDashboardData(workspace.user.id);
 
   return (
     <>
