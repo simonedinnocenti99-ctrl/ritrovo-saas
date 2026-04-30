@@ -28,7 +28,7 @@ export function AISuggestionCard({ suggestion }: { suggestion: AISuggestion }) {
         <p><span className="font-medium text-foreground">Periodo:</span> {suggestion.bestPeriod}</p>
         <p><span className="font-medium text-foreground">Categoria:</span> {suggestion.category}</p>
       </div>
-      <p className="mt-4 text-sm leading-6"><span className="font-medium">Perche:</span> {suggestion.reason}</p>
+      <p className="mt-4 text-sm leading-6"><span className="font-medium">Perché:</span> {suggestion.reason}</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
           <p className="text-sm font-medium">Da preparare</p>

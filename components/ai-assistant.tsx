@@ -41,7 +41,7 @@ export function AIAssistant() {
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="type">Tipo di attivita</Label>
+            <Label htmlFor="type">Tipo di attività</Label>
             <Input id="type" name="type" placeholder="Cena, weekend, sport, cultura" required />
           </div>
           <div>

@@ -62,7 +62,7 @@ export function CreateActivityForm({ defaults, groups }: { defaults?: Record<str
       </div>
       <div>
         <Label htmlFor="location_address">Indirizzo</Label>
-        <Input id="location_address" name="location_address" placeholder="Via, citta o link maps" />
+        <Input id="location_address" name="location_address" placeholder="Via, città o link maps" />
       </div>
       <div>
         <Label htmlFor="budget_min">Budget minimo</Label>

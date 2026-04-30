@@ -42,13 +42,13 @@ function fallbackSuggestions(input: z.infer<typeof requestSchema>) {
         estimatedBudget: input.budget || "Da definire",
         duration: input.duration || "Mezza giornata",
         bestPeriod: input.period || "Prossime settimane",
-        requirements: ["Creare sondaggio data", "Raccogliere disponibilita", "Confermare partecipanti"],
+        requirements: ["Creare sondaggio data", "Raccogliere disponibilità", "Confermare partecipanti"],
         pollQuestions: ["Quale data preferisci?", "Che budget ti va bene?"]
       },
       {
         title: `Versione rilassata: ${input.type}`,
         description: "Formato amichevole con prenotazione flessibile e spazio per arrivare in momenti diversi.",
-        reason: "Riduce attrito organizzativo e funziona bene per gruppi con disponibilita variabile.",
+        reason: "Riduce attrito organizzativo e funziona bene per gruppi con disponibilità variabile.",
         category: input.type,
         estimatedBudget: input.budget || "Medio",
         duration: input.duration || "2-4 ore",
@@ -58,12 +58,12 @@ function fallbackSuggestions(input: z.infer<typeof requestSchema>) {
       },
       {
         title: `${input.type} premium ma sostenibile`,
-        description: "Una proposta piu curata, con una variante economica da mettere ai voti.",
-        reason: "Permette al gruppo di scegliere il livello di spesa senza bloccare l idea.",
+        description: "Una proposta più curata, con una variante economica da mettere ai voti.",
+        reason: "Permette al gruppo di scegliere il livello di spesa senza bloccare l'idea.",
         category: input.type,
         estimatedBudget: input.budget || "Variabile",
         duration: input.duration || "Una giornata",
-        bestPeriod: input.period || "Quando ci sono piu conferme",
+        bestPeriod: input.period || "Quando ci sono più conferme",
         requirements: ["Due preventivi", "Sondaggio budget", "Conferma anticipo se serve"],
         pollQuestions: ["Meglio opzione economica o esperienza completa?"]
       }
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "Sei l assistente di GatherLoop. Genera solo JSON valido con suggestions: 3-5 idee in italiano, pratiche e coerenti con storico, stagione, budget, durata, vincoli e tono."
+              "Sei l'assistente di Ritrovo. Genera solo JSON valido con suggestions: 3-5 idee in italiano, pratiche e coerenti con storico, stagione, budget, durata, vincoli e tono."
           },
           {
             role: "user",

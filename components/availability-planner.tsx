@@ -38,7 +38,7 @@ export function AvailabilityPlanner({ activityId, options, responses }: { activi
         <div key={option.id} className="rounded-2xl border bg-white p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="font-semibold">{option.label || "Opzione disponibilita"} {bestId === option.id ? <span className="text-primary">migliore</span> : null}</h3>
+              <h3 className="font-semibold">{option.label || "Opzione disponibilità"} {bestId === option.id ? <span className="text-primary">migliore</span> : null}</h3>
               <p className="text-sm text-muted-foreground">
                 {format(new Date(option.starts_at), "d MMM HH:mm", { locale: it })} - {format(new Date(option.ends_at), "d MMM HH:mm", { locale: it })}
               </p>

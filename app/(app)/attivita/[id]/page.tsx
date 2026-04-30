@@ -22,7 +22,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
           <Card>
-            <CardHeader><CardTitle>Disponibilita</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Disponibilità</CardTitle></CardHeader>
             <AvailabilityPlanner activityId={detail.activity.id} options={detail.availabilityOptions} responses={detail.availabilityResponses} />
           </Card>
 

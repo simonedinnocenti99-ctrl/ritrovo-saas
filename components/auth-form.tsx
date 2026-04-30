@@ -16,7 +16,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <h1 className="text-2xl font-semibold">{mode === "login" ? "Bentornato" : "Crea il tuo Ritrovo"}</h1>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {mode === "login"
-          ? "Accedi per gestire attivita, sondaggi e foto del gruppo."
+          ? "Accedi per gestire attività, sondaggi e foto del gruppo."
           : "Parti con uno spazio privato. Potrai invitare gli altri dopo il primo accesso."}
       </p>
       <div className="mt-6 space-y-4">

@@ -17,11 +17,11 @@ function getSignupErrorMessage(message: string) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("user already registered") || normalized.includes("already registered")) {
-    return "Esiste gia un account con questa email. Prova ad accedere.";
+    return "Esiste già un account con questa email. Prova ad accedere.";
   }
 
   if (normalized.includes("email signups are disabled") || normalized.includes("signup disabled")) {
-    return "La registrazione via email non e abilitata in Supabase Auth.";
+    return "La registrazione via email non è abilitata in Supabase Auth.";
   }
 
   if (normalized.includes("password")) {
@@ -29,7 +29,7 @@ function getSignupErrorMessage(message: string) {
   }
 
   if (normalized.includes("redirect") || normalized.includes("not allowed")) {
-    return "Il redirect di registrazione non e autorizzato in Supabase Auth.";
+    return "Il redirect di registrazione non è autorizzato in Supabase Auth.";
   }
 
   if (normalized.includes("database") || normalized.includes("saving new user")) {

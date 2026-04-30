@@ -40,12 +40,12 @@ export default async function DashboardPage() {
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.85fr]">
         <Card>
           <CardHeader><CardTitle>Ultimi ritrovi passati</CardTitle></CardHeader>
-          {data.past.length ? <ActivityTimeline activities={data.past} /> : <p className="text-sm text-muted-foreground">Lo storico comparira qui dopo i primi eventi completati.</p>}
+          {data.past.length ? <ActivityTimeline activities={data.past} /> : <p className="text-sm text-muted-foreground">Lo storico comparirà qui dopo i primi eventi completati.</p>}
         </Card>
         <Card>
           <CardHeader><CardTitle>Suggerimenti rapidi</CardTitle></CardHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
-            <p>Raccogli disponibilita prima di fissare una data definitiva.</p>
+            <p>Raccogli disponibilità prima di fissare una data definitiva.</p>
             <p>Trasforma le idee AI in bozze e poi fai votare il gruppo.</p>
             <p>Carica foto sugli eventi completati per creare una memoria consultabile.</p>
           </div>

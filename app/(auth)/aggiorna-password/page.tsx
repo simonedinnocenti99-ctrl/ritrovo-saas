@@ -10,7 +10,7 @@ export default function UpdatePasswordPage() {
         <UpdatePasswordForm />
       </Suspense>
       <p className="mt-5 text-center text-sm text-muted-foreground">
-        Hai gia aggiornato la password? <Link className="font-medium text-primary" href="/login">Accedi</Link>
+        Hai già aggiornato la password? <Link className="font-medium text-primary" href="/login">Accedi</Link>
       </p>
     </div>
   );
