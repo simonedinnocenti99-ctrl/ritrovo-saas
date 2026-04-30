@@ -36,7 +36,7 @@ export async function getCurrentWorkspace(): Promise<Workspace> {
     .maybeSingle();
 
   let organization = membership?.organizations as Organization | undefined;
-  let role = membership?.role ?? "owner";
+  const role = membership?.role ?? "owner";
 
   if (!organization) {
     const baseName = profile?.full_name ? `Ritrovo di ${profile.full_name.split(" ")[0]}` : "Il mio Ritrovo";
