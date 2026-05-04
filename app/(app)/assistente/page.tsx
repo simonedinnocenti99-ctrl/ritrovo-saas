@@ -4,7 +4,10 @@ import { PageHeader } from "@/components/page-header";
 export default function AssistantPage() {
   return (
     <>
-      <PageHeader title="Assistente AI" subtitle="Genera 3-5 idee partendo dallo storico del gruppo, dai vincoli e dal tipo di esperienza che vuoi proporre." />
+      <PageHeader
+        title="AI / Suggerimenti"
+        subtitle="Usa i suggerimenti per proporre idee, generare inviti, creare sondaggi, riassumere risposte e decidere la prossima azione utile."
+      />
       <AIAssistant />
     </>
   );

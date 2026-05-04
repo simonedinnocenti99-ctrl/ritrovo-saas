@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Settings } from "lucide-react";
 import { ActivityCard } from "@/components/activity-card";
 import { inviteMemberAction } from "@/app/(app)/actions";
 import { CopyInviteLinks } from "@/components/copy-invite-links";
@@ -25,8 +26,20 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
     <>
       <PageHeader
         title={group.name}
-        subtitle={group.description ?? "Ritrovi e persone collegati a questo gruppo."}
-        action={<Button asChild href={`/nuova-attivita?group_id=${group.id}`}>Nuovo ritrovo</Button>}
+        subtitle={group.description ?? "Spazio ricorrente con membri, ritrovi, note e memoria del gruppo."}
+        action={
+          <div className="flex gap-2">
+            {canManageGroup ? (
+              <Button asChild variant="outline" size="icon">
+                <Link href="#gestione-gruppo" aria-label="Impostazioni gruppo">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : null}
+            <Button asChild href={`/nuova-attivita?group_id=${group.id}`}>Nuovo ritrovo</Button>
+          </div>
+        }
+        breadcrumbs={[{ label: "Gruppi", href: "/gruppi" }, { label: group.name }]}
       />
       <div className="grid gap-4 md:grid-cols-3">
         <Card><p className="text-sm text-muted-foreground">Ritrovi totali</p><p className="mt-2 text-3xl font-semibold">{activities.length}</p></Card>
@@ -41,10 +54,10 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         {activities.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{activities.map((activity) => <ActivityCard key={activity.id} activity={activity} />)}</div>
         ) : (
-          <EmptyState title="Nessun ritrovo nel gruppo" message="Crea il primo ritrovo per questo pubblico ricorrente." actionHref={`/nuova-attivita?group_id=${group.id}`} actionLabel="Crea ritrovo" />
+          <EmptyState title="Nessun ritrovo nel gruppo" message="Crea il primo ritrovo e condividi il link con i partecipanti." actionHref={`/nuova-attivita?group_id=${group.id}`} actionLabel="Nuovo ritrovo" />
         )}
       </section>
-      <section className="mt-8">
+      <section id="gestione-gruppo" className="mt-8 scroll-mt-24">
         <h2 className="mb-4 text-xl font-semibold">Gestione gruppo</h2>
         <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
           {canManageGroup ? (

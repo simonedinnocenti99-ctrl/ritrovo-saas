@@ -16,8 +16,8 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <h1 className="text-2xl font-semibold">{mode === "login" ? "Bentornato" : "Crea il tuo Ritrovo"}</h1>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {mode === "login"
-          ? "Accedi per gestire attività, sondaggi e foto del gruppo."
-          : "Parti con uno spazio privato. Potrai invitare gli altri dopo il primo accesso."}
+          ? "Accedi per gestire ritrovi, RSVP, sondaggi e foto dei tuoi gruppi."
+          : "Parti con uno spazio privato per il tuo gruppo. Potrai invitare gli altri dopo il primo accesso."}
       </p>
       <div className="mt-6 space-y-4">
         {mode === "signup" ? (
@@ -38,7 +38,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       {state?.error ? <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{state.error}</p> : null}
       <Button className="mt-6 w-full" disabled={pending}>
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        {mode === "login" ? "Accedi" : "Registrati"}
+        {mode === "login" ? "Accedi" : "Prova con il tuo gruppo"}
       </Button>
     </form>
   );

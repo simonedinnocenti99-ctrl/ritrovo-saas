@@ -7,10 +7,10 @@ export const metadata: Metadata = {
     default: "Ritrovo",
     template: "%s | Ritrovo"
   },
-  description: "Ritrovo è una piattaforma privata per organizzare, pianificare e ricordare attività di gruppo.",
+  description: "Ritrovo organizza ritrovi, disponibilità, RSVP, sondaggi, note, foto e ricordi dei tuoi gruppi.",
   openGraph: {
     title: "Ritrovo",
-    description: "La social planning app privata per gruppi, community e aziende.",
+    description: "La social planning app privata per organizzare attività e ricordi dei tuoi gruppi.",
     type: "website",
     locale: "it_IT"
   },

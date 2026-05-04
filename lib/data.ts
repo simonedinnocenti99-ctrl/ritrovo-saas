@@ -62,19 +62,39 @@ export async function listActivities(groupId: string, filters?: ActivityFilters)
 }
 
 async function getActivitySummary(activities: Activity[]) {
-  const upcoming = activities.filter((activity) => ["draft", "planning", "scheduled"].includes(activity.status)).slice(0, 4);
-  const past = activities.filter((activity) => activity.status === "completed").slice(0, 4);
+  const upcoming = activities
+    .filter((activity) => ["draft", "planning", "scheduled"].includes(activity.status))
+    .sort((a, b) => {
+      if (!a.starts_at && !b.starts_at) return a.updated_at.localeCompare(b.updated_at);
+      if (!a.starts_at) return 1;
+      if (!b.starts_at) return -1;
+      return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
+    })
+    .slice(0, 6);
+  const past = activities.filter((activity) => activity.status === "completed").slice(0, 6);
   const activityIds = activities.map((activity) => activity.id);
 
   const supabase = await createClient();
-  const { data: polls } = activityIds.length
-    ? await supabase.from("polls").select("*").in("activity_id", activityIds).eq("status", "open").limit(5)
-    : { data: [] };
-  const { data: availability } = activityIds.length
-    ? await supabase.from("availability_options").select("*").in("activity_id", activityIds).limit(5)
-    : { data: [] };
+  const [{ data: polls }, { data: availability }, { data: participants }, { data: invitations }, { data: photos }] = activityIds.length
+    ? await Promise.all([
+        supabase.from("polls").select("*").in("activity_id", activityIds).eq("status", "open").limit(12),
+        supabase.from("availability_options").select("*").in("activity_id", activityIds).limit(20),
+        supabase.from("activity_participants").select("*").in("activity_id", activityIds),
+        supabase.from("invitations").select("*").in("activity_id", activityIds).eq("status", "pending").order("created_at", { ascending: false }),
+        supabase.from("activity_photos").select("*").in("activity_id", activityIds)
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
-  return { upcoming, past, openPolls: (polls ?? []) as Poll[], availability: (availability ?? []) as AvailabilityOption[] };
+  return {
+    activities,
+    upcoming,
+    past,
+    openPolls: (polls ?? []) as Poll[],
+    availability: (availability ?? []) as AvailabilityOption[],
+    participants: (participants ?? []) as ActivityParticipant[],
+    invitations: (invitations ?? []) as Invitation[],
+    photos: (photos ?? []) as ActivityPhoto[]
+  };
 }
 
 export async function getDashboardData(userId: string) {

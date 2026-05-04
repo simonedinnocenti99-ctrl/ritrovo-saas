@@ -3,6 +3,7 @@ import { UsersRound } from "lucide-react";
 import { CreateGroupForm } from "@/components/create-group-form";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/states";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
@@ -11,7 +12,11 @@ export default async function GroupsPage() {
 
   return (
     <>
-      <PageHeader title="Gruppi" subtitle="Organizza pubblici ricorrenti: partner, dipendenti, team, amici o community." />
+      <PageHeader
+        title="Gruppi"
+        subtitle="Spazi ricorrenti con membri, ritrovi, archivio e impostazioni. Usali quando organizzi spesso con le stesse persone."
+        action={<Button asChild href="#crea-gruppo">Crea gruppo</Button>}
+      />
       <section>
         {workspace.groups.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -33,10 +38,10 @@ export default async function GroupsPage() {
             ))}
           </div>
         ) : (
-          <EmptyState title="Nessun gruppo" message="I gruppi sono opzionali: creali quando vuoi riusare lo stesso insieme di persone." />
+          <EmptyState title="Nessun gruppo" message="Crea uno spazio privato quando vuoi organizzare spesso lo stesso insieme di persone." actionHref="#crea-gruppo" actionLabel="Crea gruppo" />
         )}
       </section>
-      <section className="mt-8">
+      <section id="crea-gruppo" className="mt-8 scroll-mt-24">
         <CreateGroupForm />
       </section>
     </>

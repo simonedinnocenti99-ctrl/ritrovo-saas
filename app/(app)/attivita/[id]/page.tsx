@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createPollAction, updateRsvpAction } from "@/app/(app)/actions";
 import { ActivityDetailHeader } from "@/components/activity-detail-header";
 import { AvailabilityPlanner } from "@/components/availability-planner";
@@ -19,6 +20,11 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="space-y-6">
+      <div className="flex max-w-full flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Link href="/attivita" className="hover:text-foreground">Ritrovi</Link>
+        <span>/</span>
+        <span className="truncate text-foreground">{detail.activity.title}</span>
+      </div>
       <ActivityDetailHeader activity={detail.activity} />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
@@ -54,7 +60,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
 
           {detail.activity.status === "completed" ? (
             <Card>
-              <CardHeader><CardTitle>Foto evento</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Foto e ricordi</CardTitle></CardHeader>
               <PhotoUploader activityId={detail.activity.id} />
               <div className="mt-4"><PhotoGallery activityId={detail.activity.id} photos={detail.photos} /></div>
             </Card>

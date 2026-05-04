@@ -17,9 +17,10 @@ export default async function ActivitiesPage({ searchParams }: { searchParams: P
   return (
     <>
       <PageHeader
-        title={selectedGroup ? `Ritrovi - ${selectedGroup.name}` : "I miei ritrovi"}
-        subtitle={selectedGroup ? "Vista dedicata al gruppo selezionato." : "Tutti i ritrovi che ti riguardano, personali o collegati ai tuoi gruppi."}
+        title={selectedGroup ? `Ritrovi di ${selectedGroup.name}` : "Ritrovi"}
+        subtitle={selectedGroup ? "Attivita singole organizzate dentro questo gruppo ricorrente." : "Ritrovi personali e ritrovi dei tuoi gruppi. I ritrovi pubblici hanno una sezione separata."}
         action={<Button asChild href={selectedGroup ? `/nuova-attivita?group_id=${selectedGroup.id}` : "/nuova-attivita"}>Nuovo ritrovo</Button>}
+        breadcrumbs={selectedGroup ? [{ label: "Gruppi", href: "/gruppi" }, { label: selectedGroup.name, href: `/gruppi/${selectedGroup.id}` }, { label: "Ritrovi" }] : undefined}
       />
       <form className="mb-6 grid gap-3 rounded-2xl border bg-white/75 p-4 md:grid-cols-[1fr_12rem_12rem_auto]">
         {selectedGroup ? <input type="hidden" name="group" value={selectedGroup.id} /> : null}
@@ -38,7 +39,7 @@ export default async function ActivitiesPage({ searchParams }: { searchParams: P
       {activities.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{activities.map((activity) => <ActivityCard key={activity.id} activity={activity} />)}</div>
       ) : (
-        <EmptyState title="Nessun ritrovo trovato" message="Prova a cambiare filtro oppure crea un nuovo ritrovo." actionHref="/nuova-attivita" actionLabel="Crea ritrovo" />
+        <EmptyState title="Nessun ritrovo trovato" message="Prova a cambiare filtro oppure crea un nuovo ritrovo personale o di gruppo." actionHref="/nuova-attivita" actionLabel="Nuovo ritrovo" />
       )}
     </>
   );

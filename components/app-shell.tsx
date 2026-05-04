@@ -1,19 +1,15 @@
 import Link from "next/link";
-import { CalendarDays, Home, LogOut, PlusCircle, Sparkles, UsersRound } from "lucide-react";
+import { LogOut, Settings, UserCircle, UsersRound } from "lucide-react";
 import { logoutAction } from "@/app/auth/actions";
+import { AppNavigation } from "@/components/app-navigation";
 import { Button } from "@/components/ui/button";
 import { initials } from "@/lib/utils";
 import type { Workspace } from "@/lib/workspace";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/attivita", label: "Ritrovi", icon: CalendarDays },
-  { href: "/gruppi", label: "Gruppi", icon: UsersRound },
-  { href: "/nuova-attivita", label: "Crea", icon: PlusCircle },
-  { href: "/assistente", label: "AI", icon: Sparkles }
-];
-
 export function AppShell({ children, workspace }: { children: React.ReactNode; workspace: Workspace }) {
+  const profileLabel = workspace.profile?.full_name || workspace.user.email || "Profilo";
+  const avatarUrl = workspace.profile?.avatar_url;
+
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[18rem_1fr]">
       <aside className="hidden border-r bg-white/82 p-5 lg:block">
@@ -26,14 +22,7 @@ export function AppShell({ children, workspace }: { children: React.ReactNode; w
             <p className="text-xs text-muted-foreground">{workspace.organization.name}</p>
           </div>
         </Link>
-        <nav className="mt-8 space-y-1">
-          {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground">
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <AppNavigation />
       </aside>
       <div className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur">
@@ -43,27 +32,40 @@ export function AppShell({ children, workspace }: { children: React.ReactNode; w
               <p className="text-xs text-muted-foreground">Ruolo: {workspace.role}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button asChild href="/nuova-attivita" size="sm" className="hidden sm:inline-flex">
-                Nuovo ritrovo
-              </Button>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
-                {initials(workspace.profile?.full_name || workspace.user.email)}
-              </div>
-              <form action={logoutAction}>
-                <Button size="icon" variant="ghost" aria-label="Esci">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </form>
+              <details className="group relative">
+                <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-secondary text-sm font-semibold text-secondary-foreground transition hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <span className="sr-only">Apri menu utente</span>
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    initials(profileLabel)
+                  )}
+                </summary>
+                <div className="absolute right-0 mt-3 w-56 rounded-2xl border bg-white p-2 shadow-soft">
+                  <div className="px-3 py-2">
+                    <p className="truncate text-sm font-semibold">{profileLabel}</p>
+                    <p className="text-xs text-muted-foreground">Profilo utente / azienda</p>
+                  </div>
+                  <Link href="/profilo" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium hover:bg-muted">
+                    <UserCircle className="h-4 w-4" />
+                    Profilo
+                  </Link>
+                  <Link href="/impostazioni" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium hover:bg-muted">
+                    <Settings className="h-4 w-4" />
+                    Impostazioni
+                  </Link>
+                  <form action={logoutAction}>
+                    <Button size="sm" variant="ghost" className="mt-1 w-full justify-start px-3" aria-label="Esci">
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </Button>
+                  </form>
+                </div>
+              </details>
             </div>
           </div>
-          <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:hidden">
-            {nav.map((item) => (
-              <Link key={item.href} href={item.href} className="flex min-w-fit items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted">
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <AppNavigation mobile />
         </header>
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>

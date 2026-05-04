@@ -15,11 +15,11 @@ export function CreateGroupForm() {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>
           <Label htmlFor="name">Nome gruppo</Label>
-          <Input id="name" name="name" placeholder="Partner, dipendenti, amici..." required />
+          <Input id="name" name="name" placeholder="Amici, squadra, club, community..." required />
         </div>
         <div>
           <Label htmlFor="description">Descrizione</Label>
-          <Textarea id="description" name="description" placeholder="A cosa serve questo gruppo?" />
+          <Textarea id="description" name="description" placeholder="Che attività organizzate insieme?" />
         </div>
         <div>
           <Label htmlFor="invite_emails">Invita membri</Label>
