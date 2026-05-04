@@ -10,7 +10,7 @@ export default async function NewActivityPage({ searchParams }: { searchParams: 
     <>
       <PageHeader
         title="Nuovo ritrovo"
-        subtitle="Un ritrovo e una singola attivita da organizzare. Puo essere personale oppure collegata a un gruppo ricorrente."
+        subtitle="Crea un ritrovo personale, di gruppo o pubblico con un flusso guidato: prima scegli il contesto, poi data, luogo, inviti, budget e privacy."
         breadcrumbs={[{ label: "Ritrovi", href: "/attivita" }, { label: "Nuovo ritrovo" }]}
       />
       <CreateActivityForm defaults={defaults} groups={workspace.groups} />

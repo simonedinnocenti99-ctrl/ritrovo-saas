@@ -12,6 +12,13 @@ export function formatCurrencyRange(min?: number | null, max?: number | null) {
   return `Fino a ${max} euro`;
 }
 
+export type UiGroupRole = "owner" | "member" | "guest";
+
+export function normalizeGroupRole(role?: string | null): UiGroupRole {
+  if (role === "owner" || role === "guest") return role;
+  return "member";
+}
+
 export function initials(name?: string | null) {
   if (!name) return "GL";
   return name

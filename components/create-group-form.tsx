@@ -28,15 +28,15 @@ export function CreateGroupForm() {
         <div>
           <Label htmlFor="invite_role">Ruolo inviti</Label>
           <Select id="invite_role" name="invite_role" defaultValue="member">
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
+            <option value="member">member</option>
+            <option value="guest">guest</option>
           </Select>
         </div>
       </div>
       {state?.error ? <p className="mt-3 text-sm text-destructive">{state.error}</p> : null}
       <Button className="mt-5" disabled={pending}>
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        Crea gruppo
+        Crea nuovo gruppo
       </Button>
     </form>
   );

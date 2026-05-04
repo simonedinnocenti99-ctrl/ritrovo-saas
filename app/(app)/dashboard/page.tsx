@@ -209,7 +209,7 @@ function OnboardingChecklist({
 }) {
   const steps = [
     { label: "Completa il profilo", done: profileComplete, href: "/profilo", cta: "Completa", description: "Nome e identita aiutano il gruppo a riconoscerti." },
-    { label: "Crea il primo gruppo", done: hasGroups, href: "/gruppi#crea-gruppo", cta: "Crea gruppo", description: "Prepara uno spazio ricorrente per le stesse persone." },
+    { label: "Crea il primo gruppo", done: hasGroups, href: "/gruppi#crea-gruppo", cta: "Crea nuovo gruppo", description: "Prepara uno spazio ricorrente per le stesse persone." },
     { label: "Crea il primo ritrovo", done: hasActivities, href: "/nuova-attivita", cta: "Crea ritrovo", description: "Imposta data, luogo o sondaggio iniziale." },
     { label: "Condividi il link di invito", done: hasInvites, href: hasActivities ? "/attivita?status=future" : "/nuova-attivita", cta: "Invita", description: "Porta dentro partecipanti o membri del gruppo." },
     { label: "Raccogli il primo RSVP", done: hasRsvp, href: "/attivita?status=future", cta: "Controlla", description: "Tieni chiare conferme, forse e risposte mancanti." }
@@ -269,7 +269,7 @@ export default async function DashboardPage() {
       ? { title: "Completa il tuo profilo", description: "Aggiungi il nome con cui vuoi comparire nei gruppi e negli inviti.", cta: "Completa", href: "/profilo", priority: "Alta" }
       : null,
     !hasGroups
-      ? { title: "Crea il tuo primo gruppo", description: "Ritrovo funziona meglio quando organizzi con uno spazio condiviso e ricorrente.", cta: "Crea gruppo", href: "/gruppi#crea-gruppo", priority: "Media" }
+      ? { title: "Crea il tuo primo gruppo", description: "Ritrovo funziona meglio quando organizzi con uno spazio condiviso e ricorrente.", cta: "Crea nuovo gruppo", href: "/gruppi#crea-gruppo", priority: "Media" }
       : null,
     !hasActivities
       ? { title: "Crea il primo ritrovo", description: "Imposta una proposta e condividila con le persone giuste.", cta: "Crea ritrovo", href: "/nuova-attivita", priority: "Alta" }

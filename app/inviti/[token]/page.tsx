@@ -63,7 +63,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       {
         group_id: invite.group_id,
         user_id: user.id,
-        role: invite.role === "admin" ? "admin" : "member"
+        role: invite.role === "guest" ? "guest" : "member"
       },
       { onConflict: "group_id,user_id" }
     );

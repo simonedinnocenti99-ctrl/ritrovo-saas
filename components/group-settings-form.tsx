@@ -5,6 +5,7 @@ import { updateGroupAction } from "@/app/(app)/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import type { Group, Profile } from "@/lib/database.types";
+import { normalizeGroupRole } from "@/lib/utils";
 
 export function GroupSettingsForm({ group }: { group: Group }) {
   const [state, action] = useActionState(updateGroupAction, null);
@@ -30,12 +31,12 @@ export function InviteMemberForm({ action, groupId }: { action: (formData: FormD
   return (
     <form action={action} className="rounded-2xl border bg-white p-5">
       <input type="hidden" name="groupId" value={groupId} />
-      <h2 className="font-semibold">Invita membro</h2>
+      <h2 className="font-semibold">Inviti</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_10rem_auto]">
         <Input name="email" type="email" placeholder="persona@email.it" required />
         <Select name="role" defaultValue="member">
-          <option value="member">Member</option>
-          <option value="admin">Admin</option>
+          <option value="member">member</option>
+          <option value="guest">guest</option>
         </Select>
         <Button>Invita</Button>
       </div>
@@ -50,11 +51,11 @@ export function MembersList({ members }: { members: Array<{ id: string; role: st
       <div className="mt-4 divide-y">
         {members.map((member) => (
           <div key={member.id} className="flex items-center justify-between gap-4 py-3">
-            <div>
+            <div className="min-w-0">
               <p className="font-medium">{member.profiles?.full_name || "Utente"}</p>
-              <p className="text-sm text-muted-foreground">{member.user_id}</p>
+              <p className="truncate text-sm text-muted-foreground">{member.user_id}</p>
             </div>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">{member.role}</span>
+            <span className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs font-medium">{normalizeGroupRole(member.role)}</span>
           </div>
         ))}
       </div>
