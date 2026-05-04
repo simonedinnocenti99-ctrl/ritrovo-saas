@@ -82,6 +82,14 @@ function privacyCopy(activity: Activity, hasInvitations: boolean) {
 function nextAction(activity: Activity, participants: ActivityParticipant[], openPolls: number, photos: number) {
   const pending = participants.filter((participant) => participant.status === "invited").length;
 
+  if (activity.status === "completed" || activity.status === "cancelled") {
+    return {
+      title: activity.status === "completed" ? "Ritrovo completato e salvato in archivio" : "Ritrovo archiviato",
+      description: "Foto, note, partecipanti confermati e dettagli principali restano raccolti come memoria del ritrovo.",
+      cta: photos > 0 ? "Vedi foto e note" : "Vai a foto e note",
+      href: "#foto"
+    };
+  }
   if (activity.status === "draft") {
     return { title: "Completa i dettagli del ritrovo", description: "Aggiungi data, luogo e inviti prima di condividerlo.", cta: "Completa ritrovo", href: "#informazioni" };
   }
@@ -93,9 +101,6 @@ function nextAction(activity: Activity, participants: ActivityParticipant[], ope
   }
   if (activity.status === "scheduled" && pending > 0) {
     return { title: "Invita chi non ha ancora risposto", description: `${pending} persone sono ancora in attesa di risposta.`, cta: "Copia link invito", href: "#inviti" };
-  }
-  if (activity.status === "completed" && photos === 0) {
-    return { title: "Aggiungi foto e note per conservarlo nell'archivio", description: "Completa la memoria del ritrovo con album e dettagli utili.", cta: "Aggiungi foto", href: "#foto" };
   }
   return { title: "Ritrovo sotto controllo", description: "Risposte, dettagli principali e inviti sono visibili in questa pagina.", cta: "Gestisci partecipanti", href: "#partecipanti" };
 }
@@ -170,9 +175,14 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
   const action = nextAction(detail.activity, detail.participants, detail.polls.filter((poll) => poll.status === "open").length, detail.photos.length);
   const organizerName = detail.organizer?.full_name || (detail.activity.created_by === workspace.user.id ? workspace.profile?.full_name || workspace.user.email : null) || "Organizzatore";
   const currentParticipant = detail.participants.find((participant) => participant.user_id === workspace.user.id);
+  const groupRole = detail.group ? workspace.groups.find((group) => group.id === detail.group?.id)?.role : null;
+  const canUploadPhotos = detail.group
+    ? Boolean(groupRole && ["owner", "member"].includes(groupRole))
+    : detail.activity.created_by === workspace.user.id || Boolean(currentParticipant);
   const startsAt = detail.activity.starts_at ? format(new Date(detail.activity.starts_at), "d MMM yyyy", { locale: it }) : "Data da definire";
   const startsTime = detail.activity.starts_at ? format(new Date(detail.activity.starts_at), "HH:mm", { locale: it }) : "Ora da definire";
   const endsTime = detail.activity.ends_at ? format(new Date(detail.activity.ends_at), "HH:mm", { locale: it }) : "Fine da definire";
+  const isHistorical = detail.activity.status === "completed" || detail.activity.status === "cancelled";
 
   const confirmed = detail.participants.filter((participant) => participant.status === "confirmed");
   const maybe = detail.participants.filter((participant) => participant.status === "maybe");
@@ -209,6 +219,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
         operationalStatus={status}
         primaryCtaHref={action.href}
         primaryCtaLabel={action.cta}
+        coverPhotoUrl={detail.photos[0]?.signedUrl ?? null}
       />
 
       <Card className="border-primary/25 bg-primary/5">
@@ -217,7 +228,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
             <MessageSquareText className="mt-1 h-5 w-5 shrink-0 text-primary" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold">Prossima azione</h2>
+                <h2 className="text-lg font-semibold">{isHistorical ? "Memoria del ritrovo" : "Prossima azione"}</h2>
                 <Badge>{status}</Badge>
               </div>
               <p className="mt-2 font-medium">{action.title}</p>
@@ -249,6 +260,12 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
             {detail.activity.location_address ? <p className="mt-4 text-sm leading-6 text-muted-foreground">Indirizzo: {detail.activity.location_address}</p> : null}
             {detail.activity.duration ? <p className="mt-2 text-sm leading-6 text-muted-foreground">Durata prevista: {detail.activity.duration}</p> : null}
             <p className="mt-4 text-sm leading-6 text-muted-foreground">{detail.activity.description || "Descrizione da completare."}</p>
+            {isHistorical ? (
+              <div className="mt-4 rounded-2xl border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+                <p className="font-medium text-foreground">{detail.group ? "Salvato nella memoria del gruppo." : "Salvato nell'archivio personale."}</p>
+                <p className="mt-1">I partecipanti mostrati sono quelli confermati: il backend attuale non distingue ancora RSVP e presenza effettiva.</p>
+              </div>
+            ) : null}
           </Card>
 
           <Card id="partecipanti">
@@ -418,10 +435,19 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
                 <CardTitle>Foto</CardTitle>
                 <Badge>{detail.photos.length ? `${detail.photos.length} foto` : "Album vuoto"}</Badge>
               </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Ogni foto resta collegata a questo ritrovo. Se il ritrovo appartiene a un gruppo, compare anche nella raccolta foto del gruppo e, quando concluso, nell&apos;Archivio.
+              </p>
             </CardHeader>
-            <PhotoUploader activityId={detail.activity.id} />
+            <PhotoUploader activityId={detail.activity.id} canUpload={canUploadPhotos} />
             <div className="mt-4">
-              <PhotoGallery activityId={detail.activity.id} photos={detail.photos} />
+              <PhotoGallery
+                activityId={detail.activity.id}
+                activityTitle={detail.activity.title}
+                activityDate={detail.activity.starts_at}
+                photos={detail.photos}
+                currentUserId={workspace.user.id}
+              />
             </div>
           </Card>
         </main>
@@ -473,17 +499,15 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
                 <Copy className="h-4 w-4" />
                 Copia link invito
               </Button>
-              <Button asChild href="#sondaggi" variant="outline">
-                <MessageSquareText className="h-4 w-4" />
-                Crea sondaggio
-              </Button>
+              {!isHistorical ? (
+                <Button asChild href="#sondaggi" variant="outline">
+                  <MessageSquareText className="h-4 w-4" />
+                  Crea sondaggio
+                </Button>
+              ) : null}
               <Button asChild href="#foto" variant="outline">
                 <Camera className="h-4 w-4" />
-                Aggiungi foto
-              </Button>
-              <Button asChild href="/nuova-attivita" variant="outline">
-                <Plus className="h-4 w-4" />
-                Crea ritrovo simile
+                {isHistorical ? "Vedi foto" : "Aggiungi foto"}
               </Button>
               <Button type="button" variant="outline" disabled>
                 <ExternalLink className="h-4 w-4" />

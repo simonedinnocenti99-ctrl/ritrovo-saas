@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CalendarClock, MapPin, ShieldCheck, UserRound, UsersRound, Wallet } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -31,7 +32,8 @@ export function ActivityDetailHeader({
   privacyHint,
   operationalStatus,
   primaryCtaHref,
-  primaryCtaLabel
+  primaryCtaLabel,
+  coverPhotoUrl
 }: {
   activity: Activity;
   groupName?: string | null;
@@ -41,6 +43,7 @@ export function ActivityDetailHeader({
   operationalStatus: string;
   primaryCtaHref: string;
   primaryCtaLabel: string;
+  coverPhotoUrl?: string | null;
 }) {
   const when = activity.starts_at ? format(new Date(activity.starts_at), "d MMM yyyy, HH:mm", { locale: it }) : "Data da definire";
   const contextLabel = groupName ? `Gruppo: ${groupName}` : "Personale";
@@ -104,16 +107,23 @@ export function ActivityDetailHeader({
           </p>
         </div>
 
-        <div className="min-h-56 bg-[radial-gradient(circle_at_30%_20%,rgba(20,184,166,0.28),transparent_34%),linear-gradient(135deg,#f8fafc,#dbeafe_52%,#dcfce7)] p-5 lg:min-h-full">
-          <div className="flex h-full min-h-48 flex-col justify-between rounded-2xl border border-white/70 bg-white/62 p-4 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
-              <Badge className="bg-white">Copertina</Badge>
-              <UsersRound className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">{activity.category}</p>
-              <p className="mt-2 text-xl font-semibold leading-tight">{activity.title}</p>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">{groupName || "Ritrovo personale"}</p>
+        <div className="relative min-h-56 overflow-hidden bg-muted lg:min-h-full">
+          {coverPhotoUrl ? (
+            <Image src={coverPhotoUrl} alt={`Copertina di ${activity.title}`} fill sizes="(min-width: 1024px) 20rem, 100vw" className="object-cover" priority />
+          ) : (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(20,184,166,0.28),transparent_34%),linear-gradient(135deg,#f8fafc,#dbeafe_52%,#dcfce7)]" />
+          )}
+          <div className="relative flex h-full min-h-56 p-5 lg:min-h-full">
+            <div className="flex h-full min-h-48 w-full flex-col justify-between rounded-2xl border border-white/70 bg-white/72 p-4 backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <Badge className="bg-white">{coverPhotoUrl ? "Anteprima foto" : "Copertina"}</Badge>
+                <UsersRound className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">{activity.category}</p>
+                <p className="mt-2 text-xl font-semibold leading-tight">{activity.title}</p>
+                <p className="mt-2 text-sm leading-5 text-muted-foreground">{groupName || "Ritrovo personale"}</p>
+              </div>
             </div>
           </div>
         </div>

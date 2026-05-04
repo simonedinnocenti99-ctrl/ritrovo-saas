@@ -92,6 +92,7 @@ export type ActivityPhoto = {
   caption: string | null;
   created_at: string;
   signedUrl?: string;
+  uploadedByName?: string | null;
 };
 
 export type AvailabilityOption = {

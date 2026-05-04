@@ -416,12 +416,27 @@ export async function uploadPhotoAction(_: unknown, formData: FormData) {
   const file = formData.get("photo");
   if (!(file instanceof File) || file.size === 0) return { error: "Seleziona una foto da caricare." };
 
-  const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowed.includes(file.type)) return { error: "Formato non supportato. Usa JPEG, PNG, WebP o GIF." };
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(file.type)) return { error: "Formato non supportato. Usa JPG, PNG o WEBP." };
   if (file.size > 5 * 1024 * 1024) return { error: "La foto deve pesare al massimo 5 MB." };
 
   const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
+  const { data: activity } = await supabase.from("activities").select("id, group_id, created_by, status").eq("id", activityId).single();
+  if (!activity) return { error: "Ritrovo non trovato." };
+
+  const groupRole = activity.group_id ? workspace.groups.find((group) => group.id === activity.group_id)?.role : null;
+  const isGroupUploader = Boolean(groupRole && ["owner", "member"].includes(groupRole));
+  const { data: participant } = await supabase
+    .from("activity_participants")
+    .select("id")
+    .eq("activity_id", activityId)
+    .eq("user_id", workspace.user.id)
+    .maybeSingle();
+  const canUpload = activity.created_by === workspace.user.id || isGroupUploader || Boolean(participant);
+
+  if (!canUpload) return { error: "Non hai i permessi per caricare foto in questo ritrovo." };
+
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${workspace.user.id}/${activityId}/${crypto.randomUUID()}.${extension}`;
 
@@ -429,7 +444,7 @@ export async function uploadPhotoAction(_: unknown, formData: FormData) {
     contentType: file.type,
     upsert: false
   });
-  if (uploadError) return { error: "Upload non riuscito. Verifica bucket e permessi Storage." };
+  if (uploadError) return { error: "Caricamento non riuscito. Riprova." };
 
   const { error } = await supabase.from("activity_photos").insert({
     activity_id: activityId,
@@ -437,23 +452,39 @@ export async function uploadPhotoAction(_: unknown, formData: FormData) {
     storage_path: path,
     caption: caption || null
   });
-  if (error) return { error: "Foto caricata, ma non salvata nel database." };
+  if (error) {
+    await supabase.storage.from("activity-photos").remove([path]);
+    return { error: "Caricamento non riuscito. Riprova." };
+  }
 
   revalidatePath(`/attivita/${activityId}`);
-  const { data: activity } = await supabase.from("activities").select("group_id").eq("id", activityId).single();
   if (activity?.group_id) revalidatePath(`/gruppi/${activity.group_id}`);
+  revalidatePath("/archivio");
+  revalidatePath("/dashboard");
   return { success: "Foto caricata." };
 }
 
-export async function deletePhotoAction(formData: FormData) {
+export async function deletePhotoAction(_: unknown, formData: FormData) {
   const activityId = z.string().uuid().parse(formData.get("activityId"));
   const photoId = z.string().uuid().parse(formData.get("photoId"));
   const storagePath = z.string().min(1).parse(formData.get("storagePath"));
+  const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
 
-  await supabase.from("activity_photos").delete().eq("id", photoId);
-  await supabase.storage.from("activity-photos").remove([storagePath]);
+  const { data: photo } = await supabase.from("activity_photos").select("id, uploaded_by, storage_path").eq("id", photoId).eq("activity_id", activityId).single();
+  if (!photo) return { error: "Foto non trovata." };
+  if (photo.uploaded_by !== workspace.user.id) return { error: "Non hai i permessi per rimuovere questa foto." };
+
+  const { error: removeError } = await supabase.storage.from("activity-photos").remove([storagePath]);
+  if (removeError) return { error: "Rimozione non riuscita. Riprova." };
+
+  const { error } = await supabase.from("activity_photos").delete().eq("id", photoId);
+  if (error) return { error: "Rimozione non riuscita. Riprova." };
+
   revalidatePath(`/attivita/${activityId}`);
   const { data: activity } = await supabase.from("activities").select("group_id").eq("id", activityId).single();
   if (activity?.group_id) revalidatePath(`/gruppi/${activity.group_id}`);
+  revalidatePath("/archivio");
+  revalidatePath("/dashboard");
+  return { success: "Foto rimossa." };
 }

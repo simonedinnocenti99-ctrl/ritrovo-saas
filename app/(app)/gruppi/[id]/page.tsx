@@ -101,13 +101,15 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {photos.map((photo) => (
               <Card key={photo.id} className="overflow-hidden p-0">
-                {photo.signedUrl ? (
-                  <Image src={photo.signedUrl} alt={photo.caption || "Foto ritrovo"} width={800} height={600} className="aspect-[4/3] w-full object-cover" />
-                ) : (
-                  <div className="flex aspect-[4/3] items-center justify-center bg-muted text-muted-foreground">
-                    <Camera className="h-6 w-6" />
-                  </div>
-                )}
+                <Link href={`/attivita/${photo.activity_id}`} className="block bg-muted">
+                  {photo.signedUrl ? (
+                    <Image src={photo.signedUrl} alt={photo.caption || "Foto ritrovo"} width={800} height={600} className="aspect-[4/3] w-full object-cover" />
+                  ) : (
+                    <div className="flex aspect-[4/3] items-center justify-center bg-muted text-muted-foreground">
+                      <Camera className="h-6 w-6" />
+                    </div>
+                  )}
+                </Link>
                 <figcaption className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <p className="line-clamp-2 text-sm font-medium">{photo.caption || photo.activityTitle}</p>
@@ -118,6 +120,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                     <CalendarClock className="h-3.5 w-3.5 shrink-0 text-primary" />
                     {formatActivityDate(photo.activityStartsAt)}
                   </p>
+                  {photo.uploadedByName ? <p className="mt-1 truncate text-xs text-muted-foreground">Caricata da {photo.uploadedByName}</p> : null}
                 </figcaption>
               </Card>
             ))}

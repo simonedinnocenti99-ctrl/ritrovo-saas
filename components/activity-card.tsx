@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CalendarClock, Camera, MapPin, MessageSquareText, UserPlus, UsersRound, Wallet } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -62,6 +63,12 @@ export function ActivityCard({ activity }: { activity: ActivityListItem }) {
 
   return (
     <Card className="flex h-full flex-col gap-5 transition hover:-translate-y-0.5 hover:shadow-soft">
+      {activity.coverPhotoUrl ? (
+        <Link href={href} className="-m-5 mb-0 block overflow-hidden rounded-t-2xl bg-muted">
+          <Image src={activity.coverPhotoUrl} alt={`Anteprima di ${activity.title}`} width={640} height={360} className="aspect-[16/9] w-full object-cover" />
+        </Link>
+      ) : null}
+
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-wrap gap-2">
           <Badge className={statusTone[activity.status]}>{operationalStatus(activity)}</Badge>

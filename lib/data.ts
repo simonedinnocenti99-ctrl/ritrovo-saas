@@ -26,6 +26,7 @@ export type ActivityListItem = Activity & {
   contextLabel: string;
   contextType: "personal" | "group" | "public" | "public-business";
   groupName: string | null;
+  coverPhotoUrl: string | null;
   participantCounts: {
     confirmed: number;
     maybe: number;
@@ -49,6 +50,43 @@ export type GroupPhotoItem = ActivityPhoto & {
   activityTitle: string;
   activityStartsAt: string | null;
 };
+
+export type ArchiveActivityItem = Activity & {
+  groupName: string | null;
+  participantCounts: {
+    confirmed: number;
+    maybe: number;
+    pending: number;
+    declined: number;
+  };
+  confirmedParticipants: string[];
+  photos: ActivityPhoto[];
+  notePreview: string | null;
+};
+
+export type ArchivePhotoItem = ActivityPhoto & {
+  activityTitle: string;
+  activityStartsAt: string | null;
+  groupName: string | null;
+};
+
+async function signActivityPhotos(photos: ActivityPhoto[]): Promise<ActivityPhoto[]> {
+  if (!photos.length) return [];
+
+  const supabase = await createClient();
+  const uploaderIds = Array.from(new Set(photos.map((photo) => photo.uploaded_by).filter(Boolean)));
+  const { data: profiles } = uploaderIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", uploaderIds)
+    : { data: [] };
+  const profilesById = new Map(((profiles ?? []) as Pick<Profile, "id" | "full_name">[]).map((profile) => [profile.id, profile.full_name]));
+
+  return Promise.all(
+    photos.map(async (photo) => {
+      const { data } = await supabase.storage.from("activity-photos").createSignedUrl(photo.storage_path, 60 * 10);
+      return { ...photo, signedUrl: data?.signedUrl, uploadedByName: profilesById.get(photo.uploaded_by) ?? null };
+    })
+  );
+}
 
 function filterActivities(activities: Activity[], filters?: ActivityFilters) {
   return activities.filter((activity) => {
@@ -159,19 +197,26 @@ export async function listActivityOverview(userId: string, filters?: ActivityLis
   const activityIds = visibleActivities.map((activity) => activity.id);
   const groupIds = Array.from(new Set(visibleActivities.map((activity) => activity.group_id).filter((id): id is string => Boolean(id))));
 
-  const [{ data: groups }, { data: participants }, { data: invitations }, { data: polls }] = activityIds.length
+  const [{ data: groups }, { data: participants }, { data: invitations }, { data: polls }, { data: photos }] = activityIds.length
     ? await Promise.all([
         groupIds.length ? supabase.from("groups").select("id, name").in("id", groupIds) : Promise.resolve({ data: [] }),
         supabase.from("activity_participants").select("*").in("activity_id", activityIds),
         supabase.from("invitations").select("*").in("activity_id", activityIds).eq("status", "pending"),
-        supabase.from("polls").select("*").in("activity_id", activityIds).eq("status", "open")
+        supabase.from("polls").select("*").in("activity_id", activityIds).eq("status", "open"),
+        supabase.from("activity_photos").select("*").in("activity_id", activityIds).order("created_at", { ascending: false })
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const groupsById = new Map(((groups ?? []) as Pick<Group, "id" | "name">[]).map((group) => [group.id, group.name]));
   const participantList = (participants ?? []) as ActivityParticipant[];
   const invitationList = (invitations ?? []) as Invitation[];
   const openPollList = (polls ?? []) as Poll[];
+  const firstPhotoByActivity = new Map<string, ActivityPhoto>();
+  ((photos ?? []) as ActivityPhoto[]).forEach((photo) => {
+    if (!firstPhotoByActivity.has(photo.activity_id)) firstPhotoByActivity.set(photo.activity_id, photo);
+  });
+  const signedCoverPhotos = await signActivityPhotos(Array.from(firstPhotoByActivity.values()));
+  const coverUrlByActivity = new Map(signedCoverPhotos.map((photo) => [photo.activity_id, photo.signedUrl ?? null]));
 
   const enriched = visibleActivities.map((activity): ActivityListItem => {
     const activityParticipants = participantList.filter((participant) => participant.activity_id === activity.id);
@@ -185,6 +230,7 @@ export async function listActivityOverview(userId: string, filters?: ActivityLis
       contextLabel: groupName ? `Gruppo: ${groupName}` : "Personale",
       contextType,
       groupName,
+      coverPhotoUrl: coverUrlByActivity.get(activity.id) ?? null,
       participantCounts: {
         confirmed: activityParticipants.filter((participant) => participant.status === "confirmed").length,
         maybe: activityParticipants.filter((participant) => participant.status === "maybe").length,
@@ -200,6 +246,78 @@ export async function listActivityOverview(userId: string, filters?: ActivityLis
   });
 
   return sortActivityList(filterActivityList(enriched, userId, filters), filters?.sort);
+}
+
+export async function getArchiveData(userId: string) {
+  const supabase = await createClient();
+  const visibleActivities = await listMyActivities(userId);
+  const archivedActivities = visibleActivities
+    .filter((activity) => activity.status === "completed" || activity.status === "cancelled")
+    .sort((a, b) => {
+      const dateA = a.starts_at ?? a.updated_at;
+      const dateB = b.starts_at ?? b.updated_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+  const activityIds = archivedActivities.map((activity) => activity.id);
+  const groupIds = Array.from(new Set(archivedActivities.map((activity) => activity.group_id).filter((id): id is string => Boolean(id))));
+
+  const [{ data: groups }, { data: participants }, { data: photos }] = activityIds.length
+    ? await Promise.all([
+        groupIds.length ? supabase.from("groups").select("id, name").in("id", groupIds) : Promise.resolve({ data: [] }),
+        supabase.from("activity_participants").select("*").in("activity_id", activityIds),
+        supabase.from("activity_photos").select("*").in("activity_id", activityIds).order("created_at", { ascending: false })
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
+
+  const groupsById = new Map(((groups ?? []) as Pick<Group, "id" | "name">[]).map((group) => [group.id, group.name]));
+  const participantList = (participants ?? []) as ActivityParticipant[];
+  const signedPhotos = await signActivityPhotos((photos ?? []) as ActivityPhoto[]);
+  const activitiesById = new Map(archivedActivities.map((activity) => [activity.id, activity]));
+
+  const activities: ArchiveActivityItem[] = archivedActivities.map((activity) => {
+    const activityParticipants = participantList.filter((participant) => participant.activity_id === activity.id);
+    const confirmedParticipants = activityParticipants
+      .filter((participant) => participant.status === "confirmed")
+      .map((participant) => participant.display_name || participant.email || "Partecipante");
+    const notes = activity.notes?.trim() || null;
+
+    return {
+      ...activity,
+      groupName: activity.group_id ? groupsById.get(activity.group_id) ?? "Gruppo" : null,
+      participantCounts: {
+        confirmed: activityParticipants.filter((participant) => participant.status === "confirmed").length,
+        maybe: activityParticipants.filter((participant) => participant.status === "maybe").length,
+        pending: activityParticipants.filter((participant) => participant.status === "invited").length,
+        declined: activityParticipants.filter((participant) => participant.status === "declined").length
+      },
+      confirmedParticipants,
+      photos: signedPhotos.filter((photo) => photo.activity_id === activity.id).slice(0, 3),
+      notePreview: notes ? (notes.length > 150 ? `${notes.slice(0, 147)}...` : notes) : null
+    };
+  });
+
+  const recentPhotos: ArchivePhotoItem[] = signedPhotos.slice(0, 8).map((photo) => {
+    const activity = activitiesById.get(photo.activity_id);
+
+    return {
+      ...photo,
+      activityTitle: activity?.title ?? "Ritrovo",
+      activityStartsAt: activity?.starts_at ?? null,
+      groupName: activity?.group_id ? groupsById.get(activity.group_id) ?? "Gruppo" : null
+    };
+  });
+
+  return {
+    activities,
+    recentPhotos,
+    stats: {
+      archivedCount: activities.length,
+      groupsCount: new Set(activities.map((activity) => activity.group_id).filter(Boolean)).size,
+      photosCount: signedPhotos.length,
+      lastArchived: activities[0] ?? null
+    }
+  };
 }
 
 export async function listActivities(groupId: string, filters?: ActivityFilters) {
@@ -248,19 +366,15 @@ export async function listGroupPhotoCollection(groupId: string): Promise<GroupPh
   if (error) throw error;
 
   const activitiesById = new Map(activities.map((activity) => [activity.id, activity]));
-  const signedPhotos = await Promise.all(
-    ((photos ?? []) as ActivityPhoto[]).map(async (photo) => {
-      const { data } = await supabase.storage.from("activity-photos").createSignedUrl(photo.storage_path, 60 * 10);
-      const activity = activitiesById.get(photo.activity_id);
+  const signedPhotos = (await signActivityPhotos((photos ?? []) as ActivityPhoto[])).map((photo) => {
+    const activity = activitiesById.get(photo.activity_id);
 
-      return {
-        ...photo,
-        signedUrl: data?.signedUrl,
-        activityTitle: activity?.title ?? "Ritrovo",
-        activityStartsAt: activity?.starts_at ?? null
-      };
-    })
-  );
+    return {
+      ...photo,
+      activityTitle: activity?.title ?? "Ritrovo",
+      activityStartsAt: activity?.starts_at ?? null
+    };
+  });
 
   return signedPhotos;
 }
@@ -344,13 +458,7 @@ export async function getActivityDetail(activityId: string) {
       supabase.from("invitations").select("*").eq("activity_id", activityId).eq("status", "pending").order("created_at", { ascending: false })
     ]);
 
-  const photoRows = (photos ?? []) as ActivityPhoto[];
-  const signedPhotos = await Promise.all(
-    photoRows.map(async (photo) => {
-      const { data } = await supabase.storage.from("activity-photos").createSignedUrl(photo.storage_path, 60 * 10);
-      return { ...photo, signedUrl: data?.signedUrl };
-    })
-  );
+  const signedPhotos = await signActivityPhotos((photos ?? []) as ActivityPhoto[]);
 
   return {
     activity: normalizedActivity,
