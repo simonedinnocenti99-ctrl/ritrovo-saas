@@ -334,6 +334,38 @@ export async function updateGroupAction(_: unknown, formData: FormData) {
   return { success: "Gruppo aggiornato." };
 }
 
+export async function deleteGroupAction(formData: FormData) {
+  const groupId = z.string().uuid().parse(formData.get("groupId"));
+  const workspace = await getCurrentWorkspace();
+  const supabase = await createClient();
+  const group = workspace.groups.find((item) => item.id === groupId);
+
+  if (!group || !["owner", "admin"].includes(group.role)) {
+    return;
+  }
+
+  const writeClient = createActivityWriteClient(supabase);
+  const { data: photos } = await writeClient
+    .from("activity_photos")
+    .select("storage_path, activities!inner(group_id)")
+    .eq("activities.group_id", groupId);
+
+  const storagePaths = (photos ?? [])
+    .map((photo) => photo.storage_path)
+    .filter((path): path is string => Boolean(path));
+
+  if (storagePaths.length) {
+    await writeClient.storage.from("activity-photos").remove(storagePaths);
+  }
+
+  const { error } = await writeClient.from("groups").delete().eq("id", groupId);
+  if (error) return;
+
+  revalidatePath("/gruppi");
+  revalidatePath("/dashboard");
+  redirect("/gruppi");
+}
+
 export async function inviteMemberAction(formData: FormData) {
   const groupId = z.string().uuid().parse(formData.get("groupId"));
   const email = z.string().email().parse(formData.get("email"));

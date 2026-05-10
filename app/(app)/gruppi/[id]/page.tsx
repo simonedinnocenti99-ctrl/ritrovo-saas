@@ -1,17 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { CalendarClock, Camera, Settings, UsersRound } from "lucide-react";
+import { CalendarClock, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { ActivityCard } from "@/components/activity-card";
 import { inviteMemberAction } from "@/app/(app)/actions";
 import { CopyInviteLinks } from "@/components/copy-invite-links";
-import { GroupSettingsForm, InviteMemberForm, MembersList } from "@/components/group-settings-form";
+import { GroupPageShell } from "@/components/group-page-shell";
+import { DeleteGroupForm, GroupSettingsForm, InviteMemberForm, MembersList } from "@/components/group-settings-form";
 import { EmptyState } from "@/components/states";
-import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getGroupDashboardData, getGroupSettings, listActivityOverview, listGroupActivities, listGroupPhotoCollection } from "@/lib/data";
 import { normalizeGroupRole } from "@/lib/utils";
@@ -47,35 +46,42 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   const membersText = memberSummary(settings.members);
 
   return (
-    <>
-      <PageHeader
-        title={group.name}
-        subtitle={group.description ?? "Spazio ricorrente con membri, ritrovi, note e memoria del gruppo."}
-        action={
-          <div className="flex gap-2">
-            {canManageGroup ? (
-              <Button asChild variant="outline" size="icon">
-                <Link href="#impostazioni-gruppo" aria-label="Impostazioni gruppo" title="Impostazioni gruppo">
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : null}
-            <Button asChild href={`/nuova-attivita?group_id=${group.id}`}>Nuovo ritrovo</Button>
-          </div>
-        }
-        breadcrumbs={[{ label: "Gruppi", href: "/gruppi" }, { label: group.name }]}
-      />
-      <Card className="mb-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-primary">
-            <UsersRound className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Membri</p>
-            <p className="mt-1 truncate text-sm leading-6 text-muted-foreground" title={membersText}>{membersText}</p>
+    <GroupPageShell
+      groupId={group.id}
+      groupName={group.name}
+      groupDescription={group.description ?? "Spazio ricorrente con membri, ritrovi, note e memoria del gruppo."}
+      canManageGroup={canManageGroup}
+      membersText={membersText}
+      membersPanel={
+        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          {canManageGroup ? (
+            <>
+              <InviteMemberForm action={inviteMemberAction} groupId={settings.group.id} />
+              <Card>
+                <h2 className="font-semibold">Link invito da condividere</h2>
+                <div className="mt-4">
+                  <CopyInviteLinks invitations={settings.invitations} baseUrl={baseUrl} />
+                </div>
+              </Card>
+            </>
+          ) : null}
+          <div className="xl:col-span-2">
+            <MembersList members={settings.members} />
           </div>
         </div>
-      </Card>
+      }
+      settingsPanel={
+        canManageGroup ? (
+          <>
+            <h2 className="mb-4 text-xl font-semibold">Impostazioni gruppo</h2>
+            <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+              <GroupSettingsForm group={settings.group} />
+              <DeleteGroupForm group={settings.group} />
+            </div>
+          </>
+        ) : null
+      }
+    >
       <div className="grid gap-4 md:grid-cols-3">
         <Card><p className="text-sm text-muted-foreground">Membri</p><p className="mt-2 text-3xl font-semibold">{settings.members.length}</p></Card>
         <Card><p className="text-sm text-muted-foreground">Ritrovi totali</p><p className="mt-2 text-3xl font-semibold">{activities.length}</p></Card>
@@ -129,26 +135,6 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           <EmptyState title="Raccolta foto vuota" message="Non ci sono ancora foto per questo gruppo. Le foto caricate nei singoli ritrovi appariranno qui." actionHref={activities.length ? `/attivita?group=${group.id}` : undefined} actionLabel={activities.length ? "Vai ai ritrovi del gruppo" : undefined} />
         )}
       </section>
-      <section id="impostazioni-gruppo" className="mt-8 scroll-mt-24">
-        <h2 className="mb-4 text-xl font-semibold">Impostazioni gruppo</h2>
-        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          {canManageGroup ? (
-            <>
-              <GroupSettingsForm group={settings.group} />
-              <InviteMemberForm action={inviteMemberAction} groupId={settings.group.id} />
-              <Card className="xl:col-span-2">
-                <h2 className="font-semibold">Link invito da condividere</h2>
-                <div className="mt-4">
-                  <CopyInviteLinks invitations={settings.invitations} baseUrl={baseUrl} />
-                </div>
-              </Card>
-            </>
-          ) : null}
-          <div className="xl:col-span-2">
-            <MembersList members={settings.members} />
-          </div>
-        </div>
-      </section>
-    </>
+    </GroupPageShell>
   );
 }

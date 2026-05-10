@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateGroupAction } from "@/app/(app)/actions";
+import { Trash2 } from "lucide-react";
+import { deleteGroupAction, updateGroupAction } from "@/app/(app)/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import type { Group, Profile } from "@/lib/database.types";
@@ -23,6 +24,30 @@ export function GroupSettingsForm({ group }: { group: Group }) {
       {state?.error ? <p className="mt-3 text-sm text-destructive">{state.error}</p> : null}
       {state?.success ? <p className="mt-3 text-sm text-primary">{state.success}</p> : null}
       <Button className="mt-5">Salva modifiche</Button>
+    </form>
+  );
+}
+
+export function DeleteGroupForm({ group }: { group: Group }) {
+  return (
+    <form
+      action={deleteGroupAction}
+      className="rounded-2xl border border-destructive/30 bg-white p-5"
+      onSubmit={(event) => {
+        if (!window.confirm(`Eliminare definitivamente il gruppo "${group.name}"? Questa azione rimuove anche ritrovi, inviti e contenuti collegati.`)) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="groupId" value={group.id} />
+      <h2 className="font-semibold text-destructive">Elimina gruppo</h2>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        Questa azione e definitiva e rimuove il gruppo con le informazioni collegate.
+      </p>
+      <Button className="mt-5" variant="destructive">
+        <Trash2 className="h-4 w-4" />
+        Elimina gruppo
+      </Button>
     </form>
   );
 }
