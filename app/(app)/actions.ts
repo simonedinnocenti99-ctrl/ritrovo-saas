@@ -33,15 +33,13 @@ const activitySchema = z.object({
   budget_min: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   budget_max: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   budget_type: z.enum(["free", "per_person", "estimated", "contribution", "tbd"]).default("tbd"),
-  currency: z.string().optional(),
   payment_notes: z.string().optional(),
   duration: z.string().optional(),
   notes: z.string().optional(),
   participants: z.string().optional(),
   privacy: z.string().min(2, "Scegli una privacy per il ritrovo."),
   max_participants: z.coerce.number().int().positive().optional().or(z.literal("")),
-  recurrence: z.string().optional(),
-  template: z.string().optional()
+  recurrence: z.string().optional()
 }).superRefine((data, context) => {
   const isDraft = data.status === "draft";
 
@@ -153,7 +151,6 @@ export async function createActivityAction(_: unknown, formData: FormData) {
         data.location_notes ? `Note luogo: ${data.location_notes}` : null,
         data.poll_deadline ? `Scadenza sondaggio disponibilita: ${data.poll_deadline}` : null,
         data.budget_type ? `Budget/prezzo: ${data.budget_type}` : null,
-        data.currency ? `Valuta: ${data.currency}` : null,
         data.payment_notes ? `Pagamento: ${data.payment_notes}` : null,
         data.privacy ? `Privacy: ${data.privacy}` : null,
         data.max_participants !== "" && data.max_participants ? `Massimo partecipanti: ${data.max_participants}` : null,
