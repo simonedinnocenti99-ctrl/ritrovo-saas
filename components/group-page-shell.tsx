@@ -63,10 +63,9 @@ export function GroupPageShell({
     setShowInvitePanel((current) => !current);
   }, []);
 
-  const openSettingsPanel = useCallback(() => {
-    setShowSettingsPanel(true);
-    scrollToSection("impostazioni-gruppo");
-  }, [scrollToSection]);
+  const toggleSettingsPanel = useCallback(() => {
+    setShowSettingsPanel((current) => !current);
+  }, []);
 
   useEffect(() => {
     if (window.location.hash === "#membri-gruppo") {
@@ -74,7 +73,7 @@ export function GroupPageShell({
     }
 
     if (window.location.hash === "#impostazioni-gruppo") {
-      openSettingsPanel();
+      setShowSettingsPanel(true);
     }
 
     const handleHashChange = () => {
@@ -83,7 +82,7 @@ export function GroupPageShell({
       }
 
       if (window.location.hash === "#impostazioni-gruppo") {
-        openSettingsPanel();
+        setShowSettingsPanel(true);
       }
     };
 
@@ -92,7 +91,7 @@ export function GroupPageShell({
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
     };
-  }, [openMembersPanel, openSettingsPanel]);
+  }, [openMembersPanel]);
 
   return (
     <>
@@ -102,7 +101,16 @@ export function GroupPageShell({
         action={
           <div className="flex gap-2">
             {canManageGroup ? (
-              <Button type="button" variant="outline" size="icon" onClick={openSettingsPanel} aria-label="Impostazioni gruppo" title="Impostazioni gruppo">
+              <Button
+                type="button"
+                variant={showSettingsPanel ? "secondary" : "outline"}
+                size="icon"
+                onClick={toggleSettingsPanel}
+                aria-expanded={showSettingsPanel}
+                aria-controls="impostazioni-gruppo"
+                aria-label={showSettingsPanel ? "Nascondi impostazioni gruppo" : "Mostra impostazioni gruppo"}
+                title={showSettingsPanel ? "Nascondi impostazioni gruppo" : "Mostra impostazioni gruppo"}
+              >
                 <Settings className="h-4 w-4" />
               </Button>
             ) : null}
@@ -111,6 +119,11 @@ export function GroupPageShell({
         }
         breadcrumbs={[{ label: "Gruppi", href: "/gruppi" }, { label: groupName }]}
       />
+      {showSettingsPanel ? (
+        <section id="impostazioni-gruppo" className="mb-6 rounded-2xl border border-primary/20 bg-white/90 p-5 shadow-soft">
+          {settingsPanel}
+        </section>
+      ) : null}
       {stats}
       <section className="mt-8">
         <Card>
@@ -166,11 +179,6 @@ export function GroupPageShell({
         </section>
       ) : null}
       {children}
-      {showSettingsPanel ? (
-        <section id="impostazioni-gruppo" className="mt-8 scroll-mt-24">
-          {settingsPanel}
-        </section>
-      ) : null}
     </>
   );
 }
