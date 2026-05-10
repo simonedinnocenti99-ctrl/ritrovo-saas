@@ -52,23 +52,26 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
       groupDescription={group.description ?? "Spazio ricorrente con membri, ritrovi, note e memoria del gruppo."}
       canManageGroup={canManageGroup}
       membersText={membersText}
-      membersPanel={
-        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          {canManageGroup ? (
-            <>
-              <InviteMemberForm action={inviteMemberAction} groupId={settings.group.id} />
-              <Card>
-                <h2 className="font-semibold">Link invito da condividere</h2>
-                <div className="mt-4">
-                  <CopyInviteLinks invitations={settings.invitations} baseUrl={baseUrl} />
-                </div>
-              </Card>
-            </>
-          ) : null}
-          <div className="xl:col-span-2">
-            <MembersList members={settings.members} />
-          </div>
+      stats={
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card><p className="text-sm text-muted-foreground">Membri</p><p className="mt-2 text-3xl font-semibold">{settings.members.length}</p></Card>
+          <Card><p className="text-sm text-muted-foreground">Ritrovi totali</p><p className="mt-2 text-3xl font-semibold">{activities.length}</p></Card>
+          <Card><p className="text-sm text-muted-foreground">Prossimi</p><p className="mt-2 text-3xl font-semibold">{data.upcoming.length}</p></Card>
         </div>
+      }
+      membersPanel={
+        <MembersList members={settings.members} />
+      }
+      invitePanel={
+        <>
+          <InviteMemberForm action={inviteMemberAction} groupId={settings.group.id} />
+          <Card>
+            <h2 className="font-semibold">Link invito da condividere</h2>
+            <div className="mt-4">
+              <CopyInviteLinks invitations={settings.invitations} baseUrl={baseUrl} />
+            </div>
+          </Card>
+        </>
       }
       settingsPanel={
         canManageGroup ? (
@@ -82,11 +85,6 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         ) : null
       }
     >
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card><p className="text-sm text-muted-foreground">Membri</p><p className="mt-2 text-3xl font-semibold">{settings.members.length}</p></Card>
-        <Card><p className="text-sm text-muted-foreground">Ritrovi totali</p><p className="mt-2 text-3xl font-semibold">{activities.length}</p></Card>
-        <Card><p className="text-sm text-muted-foreground">Prossimi</p><p className="mt-2 text-3xl font-semibold">{data.upcoming.length}</p></Card>
-      </div>
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Ritrovi del gruppo</h2>
