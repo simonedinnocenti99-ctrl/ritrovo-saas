@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { sendActivityInviteEmail, sendGroupInviteEmail, summarizeEmailResults } from "@/lib/email";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentWorkspace } from "@/lib/workspace";
 
@@ -80,12 +81,48 @@ const activitySchema = z.object({
   }
 });
 
+function createActivityErrorMessage(error: { code?: string; message?: string; details?: string | null }) {
+  console.error("createActivityAction failed", {
+    code: error.code,
+    message: error.message,
+    details: error.details
+  });
+
+  if (error.code === "42501") {
+    return "Non hai i permessi per creare un ritrovo in questo contesto.";
+  }
+
+  if (error.code === "23502" && error.message?.includes("group_id")) {
+    return "Il database non e aggiornato per i ritrovi personali: applica le ultime migration Supabase.";
+  }
+
+  if (error.code === "23503") {
+    return "Non riesco a collegare il ritrovo al profilo, gruppo o organizzazione corrente.";
+  }
+
+  if (error.code === "23514") {
+    return "Controlla date e budget: uno dei valori non rispetta i vincoli del database.";
+  }
+
+  return "Non riesco a creare il ritrovo. Controlla permessi e campi.";
+}
+
+function createActivityWriteClient(fallbackClient: Awaited<ReturnType<typeof createClient>>) {
+  try {
+    return createAdminClient();
+  } catch (error) {
+    console.warn("Supabase service role unavailable for activity creation; using session client.", error);
+    return fallbackClient;
+  }
+}
+
 export async function createActivityAction(_: unknown, formData: FormData) {
   const parsed = activitySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Dati non validi." };
 
   const workspace = await getCurrentWorkspace();
   const supabase = await createClient();
+  const writeClient = createActivityWriteClient(supabase);
   const data = parsed.data;
   const groupId = data.activity_type === "group" && data.group_id && data.group_id !== "personal" ? data.group_id : null;
 
@@ -93,7 +130,7 @@ export async function createActivityAction(_: unknown, formData: FormData) {
     return { error: "Non puoi creare un ritrovo in questo gruppo." };
   }
 
-  const { data: activity, error } = await supabase
+  const { data: activity, error } = await writeClient
     .from("activities")
     .insert({
       organization_id: workspace.organization.id,
@@ -126,7 +163,7 @@ export async function createActivityAction(_: unknown, formData: FormData) {
     .select()
     .single();
 
-  if (error) return { error: "Non riesco a creare il ritrovo. Controlla permessi e campi." };
+  if (error) return { error: createActivityErrorMessage(error) };
 
   if (data.date_mode !== "fixed") {
     const options = [
@@ -136,7 +173,7 @@ export async function createActivityAction(_: unknown, formData: FormData) {
     ].filter((option): option is { starts_at: string; ends_at: string | undefined; label: string } => Boolean(option.starts_at));
 
     if (options.length) {
-      const { error: availabilityError } = await supabase.from("availability_options").insert(
+      const { error: availabilityError } = await writeClient.from("availability_options").insert(
         options.map((option) => ({
           activity_id: activity.id,
           starts_at: option.starts_at,
@@ -155,7 +192,7 @@ export async function createActivityAction(_: unknown, formData: FormData) {
     .filter(Boolean);
 
   if (participants.length) {
-    const { error: participantsError } = await supabase.from("activity_participants").insert(
+    const { error: participantsError } = await writeClient.from("activity_participants").insert(
       participants.map((value) => ({
         activity_id: activity.id,
         display_name: value.includes("@") ? null : value,
@@ -168,7 +205,7 @@ export async function createActivityAction(_: unknown, formData: FormData) {
 
     const participantEmails = Array.from(new Set(participants.filter((value) => value.includes("@")).map((value) => value.toLowerCase())));
     if (participantEmails.length) {
-      const { error: inviteError } = await supabase.from("invitations").insert(
+      const { error: inviteError } = await writeClient.from("invitations").insert(
         participantEmails.map((email) => ({
           organization_id: workspace.organization.id,
           activity_id: activity.id,
