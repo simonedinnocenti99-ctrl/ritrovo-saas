@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { UsersRound } from "lucide-react";
-import { CreateGroupForm } from "@/components/create-group-form";
-import { PageHeader } from "@/components/page-header";
+import { GroupsPageShell } from "@/components/groups-page-shell";
 import { EmptyState } from "@/components/states";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { enrichGroupsForList } from "@/lib/data";
 import { normalizeGroupRole } from "@/lib/utils";
@@ -14,12 +12,7 @@ export default async function GroupsPage() {
   const groups = await enrichGroupsForList(workspace.groups);
 
   return (
-    <>
-      <PageHeader
-        title="Gruppi"
-        subtitle="Spazi ricorrenti con membri, ritrovi, archivio e impostazioni. Usali quando organizzi spesso con le stesse persone."
-        action={<Button asChild href="#crea-gruppo">Crea nuovo gruppo</Button>}
-      />
+    <GroupsPageShell>
       <section>
         {groups.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -57,9 +50,6 @@ export default async function GroupsPage() {
           <EmptyState title="Nessun gruppo" message="Non hai ancora creato gruppi. Crea un nuovo gruppo per organizzare ritrovi, disponibilita e ricordi in uno spazio unico." actionHref="#crea-gruppo" actionLabel="Crea nuovo gruppo" />
         )}
       </section>
-      <section id="crea-gruppo" className="mt-8 scroll-mt-24">
-        <CreateGroupForm />
-      </section>
-    </>
+    </GroupsPageShell>
   );
 }
